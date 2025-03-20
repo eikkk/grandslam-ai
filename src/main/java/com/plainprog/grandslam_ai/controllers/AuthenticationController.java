@@ -1,6 +1,6 @@
 package com.plainprog.grandslam_ai.controllers;
 
-import com.plainprog.grandslam_ai.model.db.TestTable;
+import com.plainprog.grandslam_ai.entity.test_table.TestTable;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +18,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthenticationController {
-
+    @PostMapping("/account")
+    public ResponseEntity<?> createAccount() {
+        return ResponseEntity.ok("Account created successfully");
+    }
     @PostMapping("/login")
     public ResponseEntity<?> login( HttpSession session) {
         try {

@@ -1,4 +1,4 @@
-package com.plainprog.grandslam_ai.model.db;
+package com.plainprog.grandslam_ai.entity.test_table;
 
 import jakarta.persistence.*;
 
