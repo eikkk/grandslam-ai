@@ -12,9 +12,34 @@ public class Account {
     @Column(name = "email")
     private String email;
 
-    @Column(name = "verified")
-    private Boolean verified;
+    @Column(name = "email_verified")
+    private Boolean emailVerified;
 
-    @Column(name = "hash_pass")
-    private String hash_pass;
+    public Account() {
+    }
+
+    public Account(String email, Boolean emailVerified) {
+        this.email = email;
+        this.emailVerified = emailVerified;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public Boolean getEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(Boolean emailVerified) {
+        this.emailVerified = emailVerified;
+    }
+
+    public Integer getId() {
+        return id;
+    }
 }
