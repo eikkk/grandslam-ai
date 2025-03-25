@@ -17,33 +17,13 @@ import java.io.IOException;
 import java.util.Map;
 
 @Component
-public class EmailServiceJavaMail implements EmailService {
-
+public class EmailServiceJavaMail {
     @Autowired
     private FreeMarkerConfig freemarkerConfig;
-
-
     @Autowired
     private JavaMailSender emailSender;
 
-    public void sendSimpleMessage(
-            String to, String subject, String text) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom("test.gslmai@gmail.com");
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(text);
-        emailSender.send(message);
-    }
-
-    @Bean
-    public SimpleMailMessage templateSimpleMessage() {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setText(
-                "This is the test email template for your email:\n%s\n");
-        return message;
-    }
-    public void sendTemplateEmail(String to, String subject, Map<String, Object> model)
+    public void sendTemplateEmail(String to, String subject, Map<String, Object> model, String templateName)
             throws MessagingException, IOException, TemplateException {
 
         MimeMessage message = emailSender.createMimeMessage();
@@ -52,7 +32,7 @@ public class EmailServiceJavaMail implements EmailService {
         helper.setTo(to);
         helper.setSubject(subject);
 
-        Template template = freemarkerConfig.getConfiguration().getTemplate("VerificationAndPasswordEmail.ftl");
+        Template template = freemarkerConfig.getConfiguration().getTemplate(templateName);
         String html = FreeMarkerTemplateUtils.processTemplateIntoString(template, model);
 
         helper.setText(html, true);

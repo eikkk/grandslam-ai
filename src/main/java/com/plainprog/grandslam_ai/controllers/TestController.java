@@ -37,14 +37,13 @@ public class TestController {
     }
     @GetMapping("/test-email")
     public String testEmail() {
-        emailService.sendSimpleMessage("petrodarchyn@gmail.com", "Test email", "This is a test email");
-        return "SENT";
+        return "NOT IMPLEMENTED";
     }
     @GetMapping("/test-email-template")
     public String testEmailTemplate() {
         Map<String,Object> model = Map.of("password", "QQwwerer234qwe");
         try {
-            emailService.sendTemplateEmail("petrodarchyn@gmail.com", "Verification", model);
+            emailService.sendTemplateEmail("petrodarchyn@gmail.com", "Verification", model, "VerificationAndPasswordEmail.ftl");
         } catch (Exception e) {
             System.out.println(e);
             throw new RuntimeException(e);

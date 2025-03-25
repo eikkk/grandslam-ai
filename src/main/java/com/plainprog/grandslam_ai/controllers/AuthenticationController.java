@@ -1,13 +1,10 @@
 package com.plainprog.grandslam_ai.controllers;
 
-import com.plainprog.grandslam_ai.entity.account.Account;
 import com.plainprog.grandslam_ai.entity.test_table.TestTable;
 import com.plainprog.grandslam_ai.object.dto.auth.AccountCreationDTO;
 import com.plainprog.grandslam_ai.object.dto.util.OperationResultDTO;
 import com.plainprog.grandslam_ai.object.request_models.auth.CreateAccountRequest;
-import com.plainprog.grandslam_ai.object.request_models.auth.VerifyEmailRequest;
 import com.plainprog.grandslam_ai.service.account.AccountService;
-import com.plainprog.grandslam_ai.service.account.helpers.PassGenHelp;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,9 +15,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
-import org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,24 +25,43 @@ import java.util.List;
 public class AuthenticationController {
     @Autowired
     AccountService accountService;
+    /**
+     * Creates an account with the given email. Generated random password.
+     * Sends an email with registration confirmation link and password.
+     * @param request request object containing email
+     * @return response entity with status code and message
+     */
     @PostMapping("/account")
     public ResponseEntity<?> createAccount(@RequestBody CreateAccountRequest request) {
-        AccountCreationDTO account = accountService.createAccount(request.getEmail());
-        if (account == null) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to create account");
+        AccountCreationDTO result = accountService.createAccount(request.getEmail());
+        if (result == null) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
-        // FIXME: case when sending email failed is not handled. subject for improvement
-        accountService.sendRegistrationEmail(request.getEmail(), account.getPassword());
+        if (result.getErrorMessage() != null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result.getErrorMessage());
+        }
+        //FIXME: case when sending email failed is not handled. subject for improvement
+        accountService.sendRegistrationEmail(result.getAccount(), result.getAccountSecurity(), result.getPassword());
         return ResponseEntity.ok("Account created successfully");
     }
+    /**
+     * Send verification email. (For cases when user requests new verification email)
+     * @param email email of the account
+     * @return response entity with status code and message
+     */
     @PostMapping("/account/email-verification")
-    public ResponseEntity<?> verifyAccountEmail(@RequestBody VerifyEmailRequest request) {
-        OperationResultDTO result = accountService.verifyEmail(request);
+    public ResponseEntity<?> requestEmailVerification(@RequestHeader String email) {
+        //TODO: THIS ENDPOINT SHOULD BE PROTECTED WITH AUTHENTICATION
+        //FIXME: case when sending email failed is not handled. subject for improvement
+        OperationResultDTO result = accountService.sendVerificationEmail(email);
         if (!result.isSuccess()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result.getMessage());
         }
-        return ResponseEntity.ok(result.getMessage());
+        return ResponseEntity.ok("Verification email sent successfully");
     }
+    /**
+     * Temporary.
+     */
     @PostMapping("/login")
     public ResponseEntity<?> login( HttpSession session) {
         try {

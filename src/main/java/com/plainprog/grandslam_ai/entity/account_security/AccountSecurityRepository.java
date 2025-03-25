@@ -4,4 +4,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AccountSecurityRepository extends JpaRepository<AccountSecurity, Integer> {
     public AccountSecurity findByAccountId(Integer accountId);
+    public AccountSecurity findByVerifyEmailToken(String verifyEmailToken);
 }

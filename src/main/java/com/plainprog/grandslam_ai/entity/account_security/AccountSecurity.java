@@ -2,6 +2,8 @@ package com.plainprog.grandslam_ai.entity.account_security;
 
 import jakarta.persistence.*;
 
+import java.time.Instant;
+
 @Entity
 @Table(name = "account_security")
 public class AccountSecurity {
@@ -9,23 +11,27 @@ public class AccountSecurity {
     @Column(name = "account_id")
     private Integer accountId;
 
-    @Column(name = "has_pass")
+    @Column(name = "hash_pass")
     private String hashPass;
 
     @Column(name = "pass_salt")
     private String passSalt;
 
     @Column(name = "verify_email_token")
-    private Boolean verifyEmailToken;
+    private String verifyEmailToken;
+
+    @Column(name = "verify_email_token_created_at")
+    private Instant verifyEmailTokenCreatedAt;
 
     public AccountSecurity() {
     }
 
-    public AccountSecurity(Integer accountId, String hashPass, String passSalt, Boolean verifyEmailToken) {
+    public AccountSecurity(Integer accountId, String hashPass, String passSalt, String verifyEmailToken, Instant verifyEmailTokenCreatedAt) {
         this.accountId = accountId;
         this.hashPass = hashPass;
         this.passSalt = passSalt;
         this.verifyEmailToken = verifyEmailToken;
+        this.verifyEmailTokenCreatedAt = verifyEmailTokenCreatedAt;
     }
 
     public Integer getAccountId() {
@@ -52,11 +58,19 @@ public class AccountSecurity {
         this.passSalt = passSalt;
     }
 
-    public Boolean getVerifyEmailToken() {
+    public String getVerifyEmailToken() {
         return verifyEmailToken;
     }
 
-    public void setVerifyEmailToken(Boolean verifyEmailToken) {
+    public void setVerifyEmailToken(String verifyEmailToken) {
         this.verifyEmailToken = verifyEmailToken;
+    }
+
+    public Instant getVerifyEmailTokenCreatedAt() {
+        return verifyEmailTokenCreatedAt;
+    }
+
+    public void setVerifyEmailTokenCreatedAt(Instant verifyEmailTokenCreatedAt) {
+        this.verifyEmailTokenCreatedAt = verifyEmailTokenCreatedAt;
     }
 }

@@ -6,6 +6,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 public class PassGenHelp {
     private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!_@#*()";
+
     public static String randomPassword() {
         return RandomStringUtils.random(12, CHARACTERS);
     }
@@ -13,7 +14,10 @@ public class PassGenHelp {
         return BCrypt.gensalt();
     }
     public static String hashPassword(String pass, String salt) {
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(16);
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(10);
         return encoder.encode(pass + salt);
+    }
+    public static String randomEmailVerificationToken() {
+        return RandomStringUtils.random(64, CHARACTERS);
     }
 }
