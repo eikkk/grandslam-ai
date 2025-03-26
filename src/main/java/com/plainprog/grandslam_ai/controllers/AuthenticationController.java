@@ -4,6 +4,7 @@ import com.plainprog.grandslam_ai.entity.test_table.TestTable;
 import com.plainprog.grandslam_ai.object.dto.auth.AccountCreationDTO;
 import com.plainprog.grandslam_ai.object.dto.util.OperationResultDTO;
 import com.plainprog.grandslam_ai.object.request_models.auth.CreateAccountRequest;
+import com.plainprog.grandslam_ai.object.request_models.auth.LoginRequest;
 import com.plainprog.grandslam_ai.service.account.AccountService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,29 +64,24 @@ public class AuthenticationController {
      * Temporary.
      */
     @PostMapping("/login")
-    public ResponseEntity<?> login( HttpSession session) {
-        try {
-            GrantedAuthority auth = new SimpleGrantedAuthority("ROLE_ADMIN");
-            List<GrantedAuthority> authorities = new ArrayList<>();
-            authorities.add(auth);
-            Authentication authentication = new UsernamePasswordAuthenticationToken("admin", "password", authorities);
+    public ResponseEntity<?> login(@RequestBody LoginRequest request, HttpSession session) {
+//        try {
+//            GrantedAuthority auth = new SimpleGrantedAuthority("ROLE_ADMIN");
+//            List<GrantedAuthority> authorities = new ArrayList<>();
+//            authorities.add(auth);
+//            Authentication authentication = new UsernamePasswordAuthenticationToken("admin", "password", authorities);
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
-            TestTable testTable = new TestTable();
-            testTable.setId(10);
-            testTable.setStr("Hello World");
-            session.setAttribute("TEST_TABLE", testTable);
+//            SecurityContextHolder.getContext().setAuthentication(authentication);
+//            session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
+//            TestTable testTable = new TestTable();
+//            testTable.setId(10);
+//            testTable.setStr("Hello World");
+//            session.setAttribute("TEST_TABLE", testTable);
 //            session.setAttribute("username", "admin");
 //            session.setAttribute("password", "password");
 //            session.setAttribute("authorities", authorities);
 //            session.setAttribute("sessionID", session.getId());
 
-
-            return ResponseEntity.ok("User successfully logged in with session ID: " + session.getId());
-
-        } catch (AuthenticationException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
-        }
+        return ResponseEntity.ok("User successfully logged in with session ID: " + session.getId());
     }
 }

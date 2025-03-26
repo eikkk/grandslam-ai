@@ -2,6 +2,8 @@ package com.plainprog.grandslam_ai.entity.account;
 
 import jakarta.persistence.*;
 
+import java.time.Instant;
+
 @Entity
 @Table(name = "account")
 public class Account {
@@ -15,12 +17,16 @@ public class Account {
     @Column(name = "email_verified")
     private Boolean emailVerified;
 
+    @Column(name = "created_at")
+    private Instant createdAt;
+
     public Account() {
     }
 
-    public Account(String email, Boolean emailVerified) {
+    public Account(String email, Boolean emailVerified, Instant createdAt) {
         this.email = email;
         this.emailVerified = emailVerified;
+        this.createdAt = createdAt;
     }
 
     public String getEmail() {
@@ -41,5 +47,13 @@ public class Account {
 
     public Integer getId() {
         return id;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
     }
 }

@@ -10,6 +10,8 @@ import com.plainprog.grandslam_ai.service.account.helpers.PassGenHelp;
 import com.plainprog.grandslam_ai.service.email.EmailServiceJavaMail;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -25,6 +27,8 @@ public class AccountService {
     private AccountSecurityRepository accountSecurityRepository;
     @Autowired
     private EmailServiceJavaMail emailService;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     /**
      * Given the email creates an account and account_security. Generates random password and salt.
@@ -39,13 +43,12 @@ public class AccountService {
         }
 
         String pass = PassGenHelp.randomPassword();
-        String randomSalt = PassGenHelp.randomSalt();
-        String hashPass = PassGenHelp.hashPassword(pass, randomSalt);
+        String hashPass = passwordEncoder.encode(pass);
 
-        Account acc = new Account(email, false);
+        Account acc = new Account(email, false, Instant.now());
         Account account = accountRepository.save(acc);
 
-        AccountSecurity accSec = new AccountSecurity(account.getId(), hashPass, randomSalt, null, null);
+        AccountSecurity accSec = new AccountSecurity(account.getId(), hashPass, "", null, null);
         accountSecurityRepository.save(accSec);
 
         return new AccountCreationDTO(account, accSec, pass, null);
