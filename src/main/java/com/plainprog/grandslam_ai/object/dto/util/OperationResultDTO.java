@@ -3,10 +3,16 @@ package com.plainprog.grandslam_ai.object.dto.util;
 public class OperationResultDTO {
     private boolean success;
     private String message;
+    private String internalMessage;
 
     public OperationResultDTO(boolean success, String message) {
         this.success = success;
         this.message = message;
+    }
+    public OperationResultDTO(boolean success, String message, String internalMessage) {
+        this.success = success;
+        this.message = message;
+        this.internalMessage = internalMessage;
     }
 
     public boolean isSuccess() {
@@ -23,5 +29,13 @@ public class OperationResultDTO {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public String getInternalMessage() {
+        return internalMessage;
+    }
+
+    public void setInternalMessage(String internalMessage) {
+        this.internalMessage = internalMessage;
     }
 }

@@ -6,9 +6,10 @@ import com.plainprog.grandslam_ai.entity.account_security.AccountSecurity;
 import com.plainprog.grandslam_ai.entity.account_security.AccountSecurityRepository;
 import com.plainprog.grandslam_ai.object.dto.auth.AccountCreationDTO;
 import com.plainprog.grandslam_ai.object.dto.util.OperationResultDTO;
-import com.plainprog.grandslam_ai.service.account.helpers.PassGenHelp;
+import com.plainprog.grandslam_ai.service.account.helper.PassGenHelp;
 import com.plainprog.grandslam_ai.service.email.EmailServiceJavaMail;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -16,7 +17,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 
 @Service
@@ -30,8 +30,13 @@ public class AccountService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Value("${app.url.base}")
+    private String baseUrl;
+    @Value("${app.brand.name}")
+    private String appName;
+
     /**
-     * Given the email creates an account and account_security. Generates random password and salt.
+     * Given the email creates an account and account_security. Generates random password
      * To be used for the very first account creation.
      * @param email email of the account
      * @return account creation dto with account, account security, password and error message
@@ -48,7 +53,7 @@ public class AccountService {
         Account acc = new Account(email, false, Instant.now());
         Account account = accountRepository.save(acc);
 
-        AccountSecurity accSec = new AccountSecurity(account.getId(), hashPass, "", null, null);
+        AccountSecurity accSec = new AccountSecurity(account.getId(), hashPass, null, null);
         accountSecurityRepository.save(accSec);
 
         return new AccountCreationDTO(account, accSec, pass, null);
@@ -106,14 +111,12 @@ public class AccountService {
 
         String token = PassGenHelp.randomEmailVerificationToken();
         String uriEncodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8);
-        String link = "http://localhost:8080/verification?token=" + uriEncodedToken;
+        String link = baseUrl + "/verification?token=" + uriEncodedToken;
         Map<String,Object> model = Map.of("link", link);
         try {
-            //TODO: Proper subject
             emailService.sendTemplateEmail(email, "Verification", model, "VerificationEmail.ftl");
         } catch (Exception e) {
-            System.out.println(e.getMessage());
-            throw new RuntimeException(e);
+            return new OperationResultDTO(false, "Email sending failed", e.getMessage());
         }
         accountSecurity.setVerifyEmailToken(token);
         accountSecurity.setVerifyEmailTokenCreatedAt(Instant.now());
@@ -127,19 +130,19 @@ public class AccountService {
      * @param accountSecurity account security to update the verify email token
      * @param pass password to send in the email
      */
-    public void sendRegistrationEmail(Account account, AccountSecurity accountSecurity, String pass) {
+    public OperationResultDTO sendRegistrationEmail(Account account, AccountSecurity accountSecurity, String pass) {
         String token = PassGenHelp.randomEmailVerificationToken();
         String uriEncodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8);
         String link = "http://localhost:8080/verification?token=" + uriEncodedToken;
         Map<String,Object> model = Map.of("password", pass, "link", link);
         try {
-            emailService.sendTemplateEmail(account.getEmail(), "Verification", model, "VerificationAndPasswordEmail.ftl");
+            emailService.sendTemplateEmail(account.getEmail(), "Verification for " + appName, model, "VerificationAndPasswordEmail.ftl");
         } catch (Exception e) {
-            System.out.println(e.getMessage());
-            throw new RuntimeException(e);
+            return new OperationResultDTO(false, "Email sending failed", e.getMessage());
         }
         accountSecurity.setVerifyEmailToken(token);
         accountSecurity.setVerifyEmailTokenCreatedAt(Instant.now());
         accountSecurityRepository.save(accountSecurity);
+        return new OperationResultDTO(true, "Registration email sent successfully");
     }
 }

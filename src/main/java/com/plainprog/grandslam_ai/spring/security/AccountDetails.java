@@ -19,7 +19,7 @@ public class AccountDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        //just return ROLE_USER for everyone
+        //(not important so far) just return ROLE_USER for everyone
         return List.of(() -> "ROLE_USER");
     }
 

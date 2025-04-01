@@ -14,9 +14,6 @@ public class AccountSecurity {
     @Column(name = "hash_pass")
     private String hashPass;
 
-    @Column(name = "pass_salt")
-    private String passSalt;
-
     @Column(name = "verify_email_token")
     private String verifyEmailToken;
 
@@ -26,10 +23,9 @@ public class AccountSecurity {
     public AccountSecurity() {
     }
 
-    public AccountSecurity(Integer accountId, String hashPass, String passSalt, String verifyEmailToken, Instant verifyEmailTokenCreatedAt) {
+    public AccountSecurity(Integer accountId, String hashPass, String verifyEmailToken, Instant verifyEmailTokenCreatedAt) {
         this.accountId = accountId;
         this.hashPass = hashPass;
-        this.passSalt = passSalt;
         this.verifyEmailToken = verifyEmailToken;
         this.verifyEmailTokenCreatedAt = verifyEmailTokenCreatedAt;
     }
@@ -48,14 +44,6 @@ public class AccountSecurity {
 
     public void setHashPass(String hashPass) {
         this.hashPass = hashPass;
-    }
-
-    public String getPassSalt() {
-        return passSalt;
-    }
-
-    public void setPassSalt(String passSalt) {
-        this.passSalt = passSalt;
     }
 
     public String getVerifyEmailToken() {
