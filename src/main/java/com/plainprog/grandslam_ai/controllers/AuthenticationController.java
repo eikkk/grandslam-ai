@@ -2,7 +2,9 @@ package com.plainprog.grandslam_ai.controllers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.plainprog.grandslam_ai.object.dto.auth.AccountCreationDTO;
+import com.plainprog.grandslam_ai.object.dto.util.OperationOutcome;
 import com.plainprog.grandslam_ai.object.dto.util.OperationResultDTO;
+import com.plainprog.grandslam_ai.object.dto.util.SimpleOperationResultDTO;
 import com.plainprog.grandslam_ai.object.request_models.auth.CreateAccountRequest;
 import com.plainprog.grandslam_ai.service.account.AccountService;
 import com.plainprog.grandslam_ai.service.auth.AuthService;
@@ -26,23 +28,28 @@ public class AuthenticationController {
     /**
      * Creates an account with the given email. Generated random password.
      * Sends an email with registration confirmation link and password.
+     * [Covered with]: AccountCreationTest#testCreateAccountEndpoint()
      * @param request request object containing email
      * @return response entity with status code and message
      */
     @PostMapping("/account")
-    public ResponseEntity<?> createAccount(@RequestBody CreateAccountRequest request) {
-        AccountCreationDTO result = accountService.createAccount(request.getEmail());
-        if (result == null) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+    public ResponseEntity<OperationResultDTO> createAccount(@RequestBody CreateAccountRequest request) {
+        AccountCreationDTO accountResult = accountService.createAccount(request.getEmail());
+        if (accountResult == null) {
+            OperationResultDTO r = new OperationResultDTO(OperationOutcome.FAILURE, "Failed to create account", null);
+            return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        if (result.getErrorMessage() != null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result.getErrorMessage());
+        if (accountResult.getErrorMessage() != null) {
+            OperationResultDTO r = new OperationResultDTO(OperationOutcome.FAILURE, "Failed to create account", accountResult.getErrorMessage());
+            return new ResponseEntity<>(r, HttpStatus.BAD_REQUEST);
         }
-        OperationResultDTO res = accountService.sendRegistrationEmail(result.getAccount(), result.getAccountSecurity(), result.getPassword());
+        SimpleOperationResultDTO res = accountService.sendRegistrationEmail(accountResult.getAccount(), accountResult.getAccountSecurity(), accountResult.getPassword());
         if (!res.isSuccess()) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(res.getMessage());
+            OperationResultDTO result = new OperationResultDTO(OperationOutcome.PARTIAL_SUCCESS, "Account created, but email sending failed", res.getMessage());
+            return new ResponseEntity<>(result, HttpStatus.OK);
         }
-        return ResponseEntity.ok("Account created successfully");
+        OperationResultDTO result = new OperationResultDTO(OperationOutcome.SUCCESS, "Account created successfully", null);
+        return new ResponseEntity<>(result, HttpStatus.OK);
     }
     /**
      * Send verification email to authorized user. (For cases when user requests new verification email)
@@ -52,7 +59,7 @@ public class AuthenticationController {
     public ResponseEntity<?> requestEmailVerification() {
         String email = SessionDataHolder.getPayload().getEmail();
 
-        OperationResultDTO result = accountService.sendVerificationEmail(email);
+        SimpleOperationResultDTO result = accountService.sendVerificationEmail(email);
         if (!result.isSuccess()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result.getMessage());
         }

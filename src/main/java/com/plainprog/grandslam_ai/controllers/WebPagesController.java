@@ -1,6 +1,6 @@
 package com.plainprog.grandslam_ai.controllers;
 
-import com.plainprog.grandslam_ai.object.dto.util.OperationResultDTO;
+import com.plainprog.grandslam_ai.object.dto.util.SimpleOperationResultDTO;
 import com.plainprog.grandslam_ai.service.account.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -26,7 +26,7 @@ public class WebPagesController {
     @GetMapping("/verification")
     public String verification(@RequestParam("token") String token, Model model) {
         String decodedToken = URLDecoder.decode(token, StandardCharsets.UTF_8);
-        OperationResultDTO result = accountService.verifyEmailToken(decodedToken);
+        SimpleOperationResultDTO result = accountService.verifyEmailToken(decodedToken);
 
         String message = result.isSuccess() ? "Your email is confirmed.<br>You can close this page."
                 : "Verification failed.<br>" + result.getMessage();

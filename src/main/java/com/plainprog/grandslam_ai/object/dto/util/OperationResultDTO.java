@@ -1,26 +1,31 @@
 package com.plainprog.grandslam_ai.object.dto.util;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class OperationResultDTO {
-    private boolean success;
+
+    @JsonProperty("operationOutcome")
+    private int operationOutcome;
+
+    @JsonProperty("message")
     private String message;
+
+    @JsonProperty("internalMessage")
     private String internalMessage;
 
-    public OperationResultDTO(boolean success, String message) {
-        this.success = success;
-        this.message = message;
-    }
-    public OperationResultDTO(boolean success, String message, String internalMessage) {
-        this.success = success;
+    public OperationResultDTO(int operationOutcome, String message, String internalMessage) {
+        this.operationOutcome = operationOutcome;
         this.message = message;
         this.internalMessage = internalMessage;
     }
 
-    public boolean isSuccess() {
-        return success;
+    // Getters and setters
+    public int getOperationOutcome() {
+        return operationOutcome;
     }
 
-    public void setSuccess(boolean success) {
-        this.success = success;
+    public void setOperationOutcome(int operationOutcome) {
+        this.operationOutcome = operationOutcome;
     }
 
     public String getMessage() {

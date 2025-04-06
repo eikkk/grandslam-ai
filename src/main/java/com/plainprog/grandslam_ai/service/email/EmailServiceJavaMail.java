@@ -21,21 +21,25 @@ public class EmailServiceJavaMail {
     @Autowired
     private JavaMailSender emailSender;
 
-    public void sendTemplateEmail(String to, String subject, Map<String, Object> model, String templateName)
-            throws MessagingException, IOException, TemplateException {
+    public boolean sendTemplateEmail(String to, String subject, Map<String, Object> model, String templateName)
+    {
+        MimeMessage message;
+        try {
+            message = emailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
 
-        MimeMessage message = emailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            helper.setTo(to);
+            helper.setSubject(subject);
 
-        helper.setTo(to);
-        helper.setSubject(subject);
+            Template template = freemarkerConfig.getConfiguration().getTemplate(templateName);
+            String html = FreeMarkerTemplateUtils.processTemplateIntoString(template, model);
 
-        Template template = freemarkerConfig.getConfiguration().getTemplate(templateName);
-        String html = FreeMarkerTemplateUtils.processTemplateIntoString(template, model);
-
-        helper.setText(html, true);
+            helper.setText(html, true);
+        } catch (Exception e) {
+            return false;
+        }
 
         emailSender.send(message);
-        System.out.println("Email sent successfully.");
+        return true;
     }
 }

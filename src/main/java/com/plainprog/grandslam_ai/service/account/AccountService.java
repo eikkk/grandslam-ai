@@ -5,7 +5,7 @@ import com.plainprog.grandslam_ai.entity.account.AccountRepository;
 import com.plainprog.grandslam_ai.entity.account_security.AccountSecurity;
 import com.plainprog.grandslam_ai.entity.account_security.AccountSecurityRepository;
 import com.plainprog.grandslam_ai.object.dto.auth.AccountCreationDTO;
-import com.plainprog.grandslam_ai.object.dto.util.OperationResultDTO;
+import com.plainprog.grandslam_ai.object.dto.util.SimpleOperationResultDTO;
 import com.plainprog.grandslam_ai.service.account.helper.PassGenHelp;
 import com.plainprog.grandslam_ai.service.email.EmailServiceJavaMail;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,48 +65,48 @@ public class AccountService {
      * @param token token to verify email and check for expiration
      * @return operation result dto with success status and message
      */
-    public OperationResultDTO verifyEmailToken(String token) {
+    public SimpleOperationResultDTO verifyEmailToken(String token) {
         AccountSecurity accountSecurity = accountSecurityRepository.findByVerifyEmailToken(token);
         if (accountSecurity == null) {
-            return new OperationResultDTO(false, "Invalid link");
+            return new SimpleOperationResultDTO(false, "Invalid link");
         }
         //handle expiration time
         Instant tokenCreatedAt = accountSecurity.getVerifyEmailTokenCreatedAt();
         int expirationTime = 60 * 60 * 36;//36 hours
         if (tokenCreatedAt.plusSeconds(expirationTime).isBefore(Instant.now())) {
-            return new OperationResultDTO(false, "Link expired. Please request new verification email inside app");
+            return new SimpleOperationResultDTO(false, "Link expired. Please request new verification email inside app");
         }
 
         Account account = accountRepository.findById(accountSecurity.getAccountId()).orElse(null);
         if (account == null) {
-            return new OperationResultDTO(false, "Account does not exist");
+            return new SimpleOperationResultDTO(false, "Account does not exist");
         }
         if (account.getEmailVerified()) {
-            return new OperationResultDTO(false, "Email already verified");
+            return new SimpleOperationResultDTO(false, "Email already verified");
         }
         account.setEmailVerified(true);
         accountSecurity.setVerifyEmailToken(null);
         accountSecurity.setVerifyEmailTokenCreatedAt(null);
         accountRepository.save(account);
         accountSecurityRepository.save(accountSecurity);
-        return new OperationResultDTO(true, "Email verified successfully");
+        return new SimpleOperationResultDTO(true, "Email verified successfully");
     }
     /**
      * Sends a verification email to the account with the given email.
      * @param email email of the account
      * @return operation result dto with success status and message
      */
-    public OperationResultDTO sendVerificationEmail(String email) {
+    public SimpleOperationResultDTO sendVerificationEmail(String email) {
         Account account = accountRepository.findByEmail(email);
         if (account == null ) {
-            return new OperationResultDTO(false, "Account with this email does not exist");
+            return new SimpleOperationResultDTO(false, "Account with this email does not exist");
         }
         if (account.getEmailVerified()){
-            return new OperationResultDTO(false, "Email already verified");
+            return new SimpleOperationResultDTO(false, "Email already verified");
         }
         AccountSecurity accountSecurity = accountSecurityRepository.findByAccountId(account.getId());
         if (accountSecurity == null) {
-            return new OperationResultDTO(false, "Account security error");
+            return new SimpleOperationResultDTO(false, "Account security error");
         }
 
         String token = PassGenHelp.randomEmailVerificationToken();
@@ -116,12 +116,12 @@ public class AccountService {
         try {
             emailService.sendTemplateEmail(email, "Verification", model, "VerificationEmail.ftl");
         } catch (Exception e) {
-            return new OperationResultDTO(false, "Email sending failed", e.getMessage());
+            return new SimpleOperationResultDTO(false, "Email sending failed", e.getMessage());
         }
         accountSecurity.setVerifyEmailToken(token);
         accountSecurity.setVerifyEmailTokenCreatedAt(Instant.now());
         accountSecurityRepository.save(accountSecurity);
-        return new OperationResultDTO(true, "Verification email sent successfully");
+        return new SimpleOperationResultDTO(true, "Verification email sent successfully");
     }
     /**
      * Sends a registration email to the account with the given email.
@@ -130,19 +130,18 @@ public class AccountService {
      * @param accountSecurity account security to update the verify email token
      * @param pass password to send in the email
      */
-    public OperationResultDTO sendRegistrationEmail(Account account, AccountSecurity accountSecurity, String pass) {
+    public SimpleOperationResultDTO sendRegistrationEmail(Account account, AccountSecurity accountSecurity, String pass) {
         String token = PassGenHelp.randomEmailVerificationToken();
         String uriEncodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8);
         String link = "http://localhost:8080/verification?token=" + uriEncodedToken;
         Map<String,Object> model = Map.of("password", pass, "link", link);
-        try {
-            emailService.sendTemplateEmail(account.getEmail(), "Verification for " + appName, model, "VerificationAndPasswordEmail.ftl");
-        } catch (Exception e) {
-            return new OperationResultDTO(false, "Email sending failed", e.getMessage());
+        boolean sent = emailService.sendTemplateEmail(account.getEmail(), "Verification for " + appName, model, "VerificationAndPasswordEmail.ftl");
+        if (!sent) {
+            return new SimpleOperationResultDTO(false, "Email sending failed");
         }
         accountSecurity.setVerifyEmailToken(token);
         accountSecurity.setVerifyEmailTokenCreatedAt(Instant.now());
         accountSecurityRepository.save(accountSecurity);
-        return new OperationResultDTO(true, "Registration email sent successfully");
+        return new SimpleOperationResultDTO(true, "Registration email sent successfully");
     }
 }
