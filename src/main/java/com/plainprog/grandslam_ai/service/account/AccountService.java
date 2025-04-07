@@ -35,6 +35,11 @@ public class AccountService {
     @Value("${app.brand.name}")
     private String appName;
 
+    @Value("${app.test.account.email}")
+    private String testEmail;
+    @Value("${app.test.account.password}")
+    private String testAccPass;
+
     /**
      * Given the email creates an account and account_security. Generates random password
      * To be used for the very first account creation.
@@ -47,7 +52,7 @@ public class AccountService {
             return new AccountCreationDTO(null, null, null, "Account with this email already exists");
         }
 
-        String pass = PassGenHelp.randomPassword();
+        String pass = testEmail.equals(email) ? testAccPass : PassGenHelp.randomPassword();
         String hashPass = passwordEncoder.encode(pass);
 
         Account acc = new Account(email, false, Instant.now());
@@ -121,7 +126,7 @@ public class AccountService {
         accountSecurity.setVerifyEmailToken(token);
         accountSecurity.setVerifyEmailTokenCreatedAt(Instant.now());
         accountSecurityRepository.save(accountSecurity);
-        return new SimpleOperationResultDTO(true, "Verification email sent successfully");
+        return new SimpleOperationResultDTO(true, "Verification email sent successfully", token);
     }
     /**
      * Sends a registration email to the account with the given email.
@@ -143,5 +148,20 @@ public class AccountService {
         accountSecurity.setVerifyEmailTokenCreatedAt(Instant.now());
         accountSecurityRepository.save(accountSecurity);
         return new SimpleOperationResultDTO(true, "Registration email sent successfully");
+    }
+    /**
+     * Finds an account by email.
+     * @param email email of the account
+     * @return account with the given email
+     */
+    public Account getAccountByEmail(String email) {
+        return accountRepository.findByEmail(email);
+    }
+    /**
+     * Deletes account by id
+     * @param id id of the account
+     */
+    public void deleteAccount(Integer id) {
+        accountRepository.deleteById(id);
     }
 }

@@ -53,17 +53,19 @@ public class AuthenticationController {
     }
     /**
      * Send verification email to authorized user. (For cases when user requests new verification email)
+     * [Covered with]: EmailVerificationTest#testEmailVerification()
      * @return response entity with status code and message
      */
     @PostMapping("/account/email-verification")
-    public ResponseEntity<?> requestEmailVerification() {
+    public ResponseEntity<OperationResultDTO> requestEmailVerification() {
         String email = SessionDataHolder.getPayload().getEmail();
 
         SimpleOperationResultDTO result = accountService.sendVerificationEmail(email);
         if (!result.isSuccess()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result.getMessage());
+            OperationResultDTO r = new OperationResultDTO(OperationOutcome.FAILURE, "Failed to send verification email", result.getMessage());
+            return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return ResponseEntity.ok("Verification email sent successfully");
+        return new ResponseEntity<>(new OperationResultDTO(OperationOutcome.SUCCESS, "Verification email sent successfully", null), HttpStatus.OK);
     }
     /**
      * Login endpoint. Authenticates user and initiates session.

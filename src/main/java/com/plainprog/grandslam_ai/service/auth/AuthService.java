@@ -20,7 +20,7 @@ import java.util.List;
 
 @Service
 public class AuthService {
-    @Value("${auth-service-url}")
+    @Value("${auth.service.url}")
     private String authServiceUrl;
     @Autowired
     private RestTemplate restTemplate;

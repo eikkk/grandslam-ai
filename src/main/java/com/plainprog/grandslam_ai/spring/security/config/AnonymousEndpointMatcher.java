@@ -8,7 +8,7 @@ import java.util.List;
 
 public class AnonymousEndpointMatcher implements RequestMatcher {
 
-    private final List<String> anonymousEndpoints = Arrays.asList("/api/auth/login", "/api/auth/account");
+    private final List<String> anonymousEndpoints = Arrays.asList("/api/auth/login", "/api/auth/account", "/verification");
 
     @Override
     public boolean matches(HttpServletRequest request) {
