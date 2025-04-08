@@ -35,8 +35,6 @@ public class EmailVerificationTest {
     private String baseUrl;
     @Value("${app.test.account.email}")
     private String testEmail;
-    @Value("${app.test.account.password}")
-    private String testAccPassword;
     @Autowired
     private TestRestTemplate restTemplate;
     @Autowired
@@ -68,19 +66,10 @@ public class EmailVerificationTest {
             assertNotEquals(HttpStatus.OK, responseEntity.getStatusCode());
 
             // Now let's log in the user
-            ResponseEntity<String> loginResponseEntity =
-                    restTemplate.postForEntity(baseUrl + "/api/auth/login", new LoginRequest(testEmail, testAccPassword), String.class);
-            assertEquals(HttpStatus.OK, loginResponseEntity.getStatusCode());
-            // Extract session cookie
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-            String sessionCookie = loginResponseEntity.getHeaders().getFirst(HttpHeaders.SET_COOKIE);
-            if (sessionCookie != null) {
-                headers.set("Cookie", sessionCookie);
-            }
+            HttpHeaders headers = testUserHelper.initiateSession();
+            assertTrue(headers.containsKey("Cookie"));
 
-            // Now we can access the endpoint
-
+            // Now we can access the endpoint with our headers
             HttpEntity<OperationResultDTO> entity = new HttpEntity<>(headers);
             responseEntity =
                     restTemplate.postForEntity(baseUrl + "/api/auth/account/email-verification", entity, OperationResultDTO.class);
