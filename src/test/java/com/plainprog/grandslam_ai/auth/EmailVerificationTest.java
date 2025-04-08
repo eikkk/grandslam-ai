@@ -22,6 +22,8 @@ import org.springframework.http.*;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -88,7 +90,7 @@ public class EmailVerificationTest {
             assertTrue(accountSecurity.getVerifyEmailToken().length() > 5);
 
             // Imitate email verification link opening
-            String token = accountSecurity.getVerifyEmailToken();
+            String token =  URLEncoder.encode(accountSecurity.getVerifyEmailToken(), StandardCharsets.UTF_8);
             String verifyUrl = baseUrl + "/verification?token=" + token;
             ResponseEntity<String> verifyResponseEntity =
                     restTemplate.getForEntity(verifyUrl, String.class);
