@@ -19,6 +19,7 @@ public class WebPagesController {
      * Verification page for email verification.
      * Verifies email token and checks for its expiration.
      * If successful, shows success html, otherwise shows error html.
+     * [Covered with]: EmailVerificationTest#testEmailVerification()
      * @param token token to verify email and check for expiration
      * @param model to pass attributes to the thymeleaf template
      * @return verification page

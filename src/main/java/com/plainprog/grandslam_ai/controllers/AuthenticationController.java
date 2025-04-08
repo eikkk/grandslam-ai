@@ -69,6 +69,7 @@ public class AuthenticationController {
     }
     /**
      * Login endpoint. Authenticates user and initiates session.
+     * [Covered with]: LoginTest#testLogin()
      */
     @PostMapping("/login")
     public ResponseEntity<?> login(HttpSession session, Principal principal) throws JsonProcessingException {
