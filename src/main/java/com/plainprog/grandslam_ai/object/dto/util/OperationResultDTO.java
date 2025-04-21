@@ -19,6 +19,9 @@ public class OperationResultDTO {
         this.internalMessage = internalMessage;
     }
 
+    public OperationResultDTO() {
+    }
+
     // Getters and setters
     public int getOperationOutcome() {
         return operationOutcome;

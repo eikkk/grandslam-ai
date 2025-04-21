@@ -5,6 +5,9 @@ public class ImageDTO {
     private String compressed;
     private String thumbnail;
 
+    public ImageDTO() {
+    }
+
     public ImageDTO(String fullSize, String compressed, String thumbnail) {
         this.fullSize = fullSize;
         this.compressed = compressed;

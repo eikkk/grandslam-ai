@@ -29,7 +29,11 @@ import java.time.Instant;
 
 @Service
 public class ImageGenerationService {
-
+    public static final int BASE_SIZE = 1280;
+    public static final int BASE_SIZE_LONGER = 1536;
+    public static final int BASE_SIZE_SHORTER = 864;
+    public static final double Q_COMPRESSION = 0.5;
+    public static final double T_COMPRESSION = 0.25;
     @Autowired
     private GCPStorageService storageService;
     @Autowired
@@ -37,14 +41,14 @@ public class ImageGenerationService {
 
     public ImgGenResponse generateImage(ImgGenRequest request, Account account) throws Exception {
         //calculate size from orientation string
-        int width = 1280;
-        int height = 1280;
+        int width = BASE_SIZE;
+        int height = BASE_SIZE;
         if (request.getOrientation().equalsIgnoreCase("v")){
-            width = 864;
-            height = 1536;
+            width = BASE_SIZE_SHORTER;
+            height = BASE_SIZE_LONGER;
         } else if (request.getOrientation().equalsIgnoreCase("h")){
-            width = 1536;
-            height = 864;
+            width = BASE_SIZE_LONGER;
+            height = BASE_SIZE_SHORTER;
         }
         //generate image
         ImgGenCommonResult generationResult = null;
@@ -56,7 +60,7 @@ public class ImageGenerationService {
             String modelName = ProviderId.toModelName(request.getProviderId());
             String finalPositivePrompt;
             String finalNegativePrompt = negativePromptCustom;
-            if (ImgGenModuleId.BASE_MODULES().contains(request.getModuleId())){
+            if (ImgGenModuleId.RAW_MODEL_MODULES().contains(request.getModuleId())){
                 finalPositivePrompt = request.getPrompt();
                 finalNegativePrompt = request.getNegativePrompt();
             } else if (request.getModuleId() == ImgGenModuleId.REALISTIC_PHOTO){
@@ -75,8 +79,8 @@ public class ImageGenerationService {
         //upload image to GCP and save to db
         String imageURL_String = generationResult.getUrl();
         URL imageURL = new URL(imageURL_String);
-        Size sizeQCompress = new Size(width / 2, height / 2);
-        Size sizeThumbnail = new Size(width / 4, width / 4);
+        Size sizeQCompress = new Size((int)(width * Q_COMPRESSION), (int)(height * Q_COMPRESSION));
+        Size sizeThumbnail = new Size((int)(width * T_COMPRESSION), (int)(height * T_COMPRESSION));
         ImageDTO image;
         try {
             InputStream is = imageURL.openStream();

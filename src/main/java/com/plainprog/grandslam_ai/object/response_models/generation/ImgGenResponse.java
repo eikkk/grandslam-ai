@@ -13,6 +13,9 @@ public class ImgGenResponse {
         this.seed = seed;
     }
 
+    public ImgGenResponse() {
+    }
+
     public int getImageId() {
         return imageId;
     }

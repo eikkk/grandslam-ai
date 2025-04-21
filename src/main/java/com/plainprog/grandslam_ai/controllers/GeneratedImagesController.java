@@ -17,9 +17,11 @@ public class GeneratedImagesController {
 
     @Autowired
     private ImageGenerationService imageGenerationService;
+
     /**
-     * Endpoint for generating images.
-     * */
+     * Main endpoint for generating images by users.
+     * [Covered with]: ImageGenerationTest#imageGenerationEndpointTest()
+     */
     @PostMapping("/image")
     public ResponseEntity<?> generateImage(@RequestBody ImgGenRequest request) {
         Account account = SessionDataHolder.getPayload().getAccount();
