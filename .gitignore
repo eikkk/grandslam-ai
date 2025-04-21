@@ -58,3 +58,6 @@ build/
 ### VS Code ###
 .vscode/
 >>>>>>> 535ab21 (initial commit)
+
+# application.properties
+application-secrets.properties

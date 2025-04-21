@@ -2,6 +2,8 @@ package com.plainprog.grandslam_ai.service.auth;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.plainprog.grandslam_ai.entity.account.Account;
+import com.plainprog.grandslam_ai.entity.account.AccountRepository;
 import com.plainprog.grandslam_ai.object.dto.auth.SessionPayloadDTO;
 import com.plainprog.grandslam_ai.object.response_models.auth.SessionData;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,8 +28,12 @@ public class AuthService {
     private RestTemplate restTemplate;
     @Autowired
     private ObjectMapper objectMapper;
+    @Autowired
+    private AccountRepository accountRepository;
 
     public String initiateSession(String email, Collection<? extends GrantedAuthority> authorities) throws JsonProcessingException {
+        Account account = accountRepository.findByEmail(email);
+
         String url = authServiceUrl + "/api/session/initiate";
 
         HttpHeaders headers = new HttpHeaders();
@@ -39,7 +45,7 @@ public class AuthService {
             authoritiesStrList.add(authority.getAuthority());
         }
         headers.set("authorities", String.join(",", authoritiesStrList));
-        SessionPayloadDTO payload = new SessionPayloadDTO(email);
+        SessionPayloadDTO payload = new SessionPayloadDTO(account);
         String jsonBody = objectMapper.writeValueAsString(payload);
         HttpEntity<String> entity = new HttpEntity<>(jsonBody, headers);
         ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, entity, String.class);

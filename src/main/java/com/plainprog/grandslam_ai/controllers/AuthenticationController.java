@@ -58,7 +58,7 @@ public class AuthenticationController {
      */
     @PostMapping("/account/email-verification")
     public ResponseEntity<OperationResultDTO> requestEmailVerification() {
-        String email = SessionDataHolder.getPayload().getEmail();
+        String email = SessionDataHolder.getPayload().getAccount().getEmail();
 
         SimpleOperationResultDTO result = accountService.sendVerificationEmail(email);
         if (!result.isSuccess()) {
