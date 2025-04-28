@@ -53,17 +53,19 @@ public class ImageGenerationService {
         //generate image
         ImgGenCommonResult generationResult = null;
 
-        String positivePromptCustom = Prompts.positivePrompt(request.getModuleId());
-        String negativePromptCustom = Prompts.negativePrompt(request.getModuleId());
+
+        boolean isRaw = ImgGenModuleId.RAW_MODEL_MODULES.contains(request.getModuleId());
+        String positivePromptCustom = Prompts.positivePrompt(request.getModuleId(), isRaw);
+        String negativePromptCustom = Prompts.negativePrompt(request.getModuleId(), isRaw);
         int steps = request.getSteps() == null || request.getSteps() <= 0 ? 25 : request.getSteps();
         if (ProviderId.SDXL_Providers().contains(request.getProviderId())){
             String modelName = ProviderId.toModelName(request.getProviderId());
             String finalPositivePrompt;
             String finalNegativePrompt = negativePromptCustom;
-            if (ImgGenModuleId.RAW_MODEL_MODULES().contains(request.getModuleId())){
+            if (ImgGenModuleId.RAW_MODEL_MODULES.contains(request.getModuleId())){
                 finalPositivePrompt = request.getPrompt();
                 finalNegativePrompt = request.getNegativePrompt();
-            } else if (request.getModuleId() == ImgGenModuleId.REALISTIC_PHOTO){
+            } else if (request.getModuleId() == ImgGenModuleId.REALISTIC_PORTRAIT){
                 finalPositivePrompt = "Photograph of " + request.getPrompt() + ", " + positivePromptCustom;
             } else {
                 finalPositivePrompt = positivePromptCustom + ", " + request.getPrompt();

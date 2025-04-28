@@ -1,6 +1,7 @@
 package com.plainprog.grandslam_ai.entity.img_gen;
 
 
+import com.plainprog.grandslam_ai.entity.account.Account;
 import jakarta.persistence.*;
 
 @Entity
@@ -13,11 +14,13 @@ public class ImgGenModule {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "provider_id")
-    private Integer providerId;
+    @ManyToOne
+    @JoinColumn(name = "provider_id")
+    private ImgGenProvider provider;
 
-    @Column(name = "group_id")
-    private Integer groupId;
+    @ManyToOne
+    @JoinColumn(name = "group_id")
+    private ImgGenGroup group;
 
     @Column(name = "active")
     private Boolean active;
@@ -45,12 +48,12 @@ public class ImgGenModule {
         this.name = name;
     }
 
-    public Integer getProviderId() {
-        return providerId;
+    public ImgGenProvider getProvider() {
+        return provider;
     }
 
-    public void setProviderId(Integer providerId) {
-        this.providerId = providerId;
+    public void setProvider(ImgGenProvider provider) {
+        this.provider = provider;
     }
 
     public Boolean getActive() {
@@ -61,11 +64,11 @@ public class ImgGenModule {
         this.active = active;
     }
 
-    public Integer getGroupId() {
-        return groupId;
+    public ImgGenGroup getGroup() {
+        return group;
     }
 
-    public void setGroupId(Integer groupId) {
-        this.groupId = groupId;
+    public void setGroup(ImgGenGroup group) {
+        this.group = group;
     }
 }
