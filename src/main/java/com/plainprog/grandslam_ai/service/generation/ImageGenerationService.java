@@ -92,7 +92,7 @@ public class ImageGenerationService {
             throw e;
         }
         //create img gen result
-        Image dbImage = new Image(generationResult.getPrice(), request.getOrientation(), generationResult.getSeed(), image.getFullSize(), image.getCompressed(), image.getThumbnail(), Instant.now());
+        Image dbImage = new Image(generationResult.getPrice(), request.getOrientation(), generationResult.getSeed(), image.getFullSize(), image.getCompressed(), image.getThumbnail(), Instant.now(), request.getPrompt(), request.getNegativePrompt());
         ImgGenModule module = new ImgGenModule(request.getModuleId());
         ImgGenProvider provider = new ImgGenProvider(request.getProviderId());
         dbImage.setImgGenModule(module);

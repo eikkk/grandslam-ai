@@ -1,6 +1,8 @@
 package com.plainprog.grandslam_ai.generation;
 
 import com.plainprog.grandslam_ai.config.TestConfig;
+import com.plainprog.grandslam_ai.entity.img_gen.Image;
+import com.plainprog.grandslam_ai.entity.img_gen.ImageRepository;
 import com.plainprog.grandslam_ai.helper.generation.Prompts;
 import com.plainprog.grandslam_ai.object.constant.images.ImgGenModuleId;
 import com.plainprog.grandslam_ai.object.constant.images.ProviderId;
@@ -35,11 +37,15 @@ public class ImageGenerationTest {
     private TestRestTemplate restTemplate;
     @Autowired
     private TestUserHelper testUserHelper;
+    @Autowired
+    private ImageRepository imageRepository;
 
     @Test
     public void imageGenerationEndpointTest() throws Exception {
         //Given
-        ImgGenRequest request = new ImgGenRequest(Prompts.testPrompt, "s", ProviderId.STABLE_DIFFUSION_XL, ImgGenModuleId.RAW_STABLE_DIFFUSION_XL);
+        String negativePrompt = Prompts.negativePrompt(ImgGenModuleId.AESTHETIC, false);
+        ImgGenRequest request = new ImgGenRequest(Prompts.testPrompt , "s", ProviderId.STABLE_DIFFUSION_XL, ImgGenModuleId.AESTHETIC);
+        request.setNegativePrompt(negativePrompt);
         HttpHeaders headers = new HttpHeaders();
         headers.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
         HttpEntity<ImgGenRequest> entity = new HttpEntity<>(request, headers);
@@ -76,6 +82,21 @@ public class ImageGenerationTest {
         validateImage(response.getImage().getCompressed(), 20, 100, sizeCompressed, sizeCompressed);
         int sizeThumbnail = (int)(ImageGenerationService.BASE_SIZE * ImageGenerationService.T_COMPRESSION);
         validateImage(response.getImage().getThumbnail(), 1, 25, sizeThumbnail, sizeThumbnail);
+
+        // Fetch image from DB and validate all the columns not empty
+        int imageId = response.getImageId();
+        assertTrue(imageId > 0, "Image ID should be greater than 0");
+        Image imageDB = imageRepository.findById(imageId).orElse(null);
+        assertNotNull(imageDB, "Image should exist in the database");
+        assertNotNull(imageDB.getFullsize(), "Full size image URL should not be null");
+        assertNotNull(imageDB.getCompressed(), "Compressed image URL should not be null");
+        assertNotNull(imageDB.getThumbnail(), "Thumbnail image URL should not be null");
+        assertNotNull(imageDB.getOrientation(), "Image orientation should not be null");
+        assertNotNull(imageDB.getSeed(), "Image seed should not be null");
+        assertNotNull(imageDB.getCreatedAt(), "Image creation time should not be null");
+        assertNotNull(imageDB.getPrompt(), "Image prompt should not be null");
+        assertNotNull(imageDB.getNegativePrompt(), "Image negative prompt should not be null");
+
     }
     private void validateImage(String imageUrl, double minSizeKB, double maxSizeKB, int expectedWidth, int expectedHeight) throws Exception {
         ResponseEntity<byte[]> imageResponse = restTemplate.getForEntity(imageUrl, byte[].class);
