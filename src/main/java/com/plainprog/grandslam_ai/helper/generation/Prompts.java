@@ -3,6 +3,9 @@ package com.plainprog.grandslam_ai.helper.generation;
 import com.plainprog.grandslam_ai.object.constant.images.ImgGenModuleId;
 
 public class Prompts {
+    /**
+     * [Covered with]: PromptsExistenceTest
+     */
     public static String positivePrompt(int moduleId, boolean isRaw){
         if (isRaw){
             return "";
@@ -53,6 +56,9 @@ public class Prompts {
         }
         throw new IllegalArgumentException("Invalid module id");
     }
+    /**
+     * [Covered with]: PromptsExistenceTest
+     */
     public static String negativePrompt(int moduleId, boolean isRaw){
         if (isRaw){
             return "";
