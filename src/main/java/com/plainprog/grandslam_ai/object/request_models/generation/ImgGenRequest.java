@@ -5,9 +5,7 @@ public class ImgGenRequest {
     private String prompt;
     private String negativePrompt;
     private String orientation; // "v" or "h" or "s"
-    private int providerId;
     private int moduleId;
-    private Integer seed;
     private Integer steps;
 
 
@@ -17,7 +15,6 @@ public class ImgGenRequest {
     public ImgGenRequest(String prompt, String orientation, int providerId, int moduleId) {
         this.prompt = prompt;
         this.orientation = orientation;
-        this.providerId = providerId;
         this.moduleId = moduleId;
     }
 
@@ -25,18 +22,8 @@ public class ImgGenRequest {
         this.prompt = prompt;
         this.negativePrompt = negativePrompt;
         this.orientation = orientation;
-        this.providerId = providerId;
         this.moduleId = moduleId;
-        this.seed = seed;
         this.steps = steps;
-    }
-
-    public int getProviderId() {
-        return providerId;
-    }
-
-    public void setProviderId(int providerId) {
-        this.providerId = providerId;
     }
 
     public String getPrompt() {
@@ -69,14 +56,6 @@ public class ImgGenRequest {
 
     public void setNegativePrompt(String negativePrompt) {
         this.negativePrompt = negativePrompt;
-    }
-
-    public Integer getSeed() {
-        return seed;
-    }
-
-    public void setSeed(Integer seed) {
-        this.seed = seed;
     }
 
     public Integer getSteps() {

@@ -27,13 +27,13 @@ public class PromptsExistenceTest {
                 .filter(m -> !ImgGenModuleId.RAW_MODEL_MODULES.contains(m.getId()))
                 .toList();
         for (var module : customModules) {
-            String positivePrompt = Prompts.positivePrompt(module.getId(), false);
+            String positivePrompt = Prompts.positivePromptCustomization(module.getId(), Prompts.testPrompt);
             assertNotNull(positivePrompt, "Prompt should not be null for module: " + module.getName());
             assertFalse(positivePrompt.isEmpty(), "Prompt should not be empty for module: " + module.getName());
 
             //also test for negative prompt.
             //at the moment all the custom modules require negative prompts, in future in may not be the case
-            String negativePrompt = Prompts.negativePrompt(module.getId(), false);
+            String negativePrompt = Prompts.negativePrompt(module.getId());
             assertNotNull(negativePrompt, "Negative prompt should not be null for module: " + module.getName());
             assertFalse(negativePrompt.isEmpty(), "Negative prompt should not be empty for module: " + module.getName());
         }

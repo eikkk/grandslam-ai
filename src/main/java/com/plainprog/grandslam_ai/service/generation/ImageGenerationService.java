@@ -1,10 +1,7 @@
 package com.plainprog.grandslam_ai.service.generation;
 
 import com.plainprog.grandslam_ai.entity.account.Account;
-import com.plainprog.grandslam_ai.entity.img_gen.Image;
-import com.plainprog.grandslam_ai.entity.img_gen.ImageRepository;
-import com.plainprog.grandslam_ai.entity.img_gen.ImgGenModule;
-import com.plainprog.grandslam_ai.entity.img_gen.ImgGenProvider;
+import com.plainprog.grandslam_ai.entity.img_gen.*;
 import com.plainprog.grandslam_ai.helper.generation.GetImgAI;
 import com.plainprog.grandslam_ai.helper.generation.Prompts;
 import com.plainprog.grandslam_ai.helper.image.ImageCompressor;
@@ -34,12 +31,40 @@ public class ImageGenerationService {
     public static final int BASE_SIZE_SHORTER = 864;
     public static final double Q_COMPRESSION = 0.5;
     public static final double T_COMPRESSION = 0.25;
+    public static final String OWNERSHIP_ERROR = "Not allowed to regenerate this image by given user";
     @Autowired
     private GCPStorageService storageService;
     @Autowired
     private ImageRepository imageRepository;
+    @Autowired
+    private ImgGenModuleRepository imgGenModuleRepository;
 
-    public ImgGenResponse generateImage(ImgGenRequest request, Account account) throws Exception {
+    public ImgGenResponse seedRegenerateImage(int imageId, Account account, String prompt) throws Exception {
+        Image image = imageRepository.findById(imageId).orElseThrow(() -> new IllegalArgumentException("Invalid image id"));
+        //ownership check (for now just creator check)
+        if (!account.getId().equals(image.getCreatorAccount().getId())){
+            throw new IllegalArgumentException(OWNERSHIP_ERROR);
+        }
+        ImgGenRequest request = new ImgGenRequest(prompt, image.getNegativePrompt(), image.getOrientation(), image.getImgGenProvider().getId(), image.getImgGenModule().getId(), image.getImgGenProvider().getId(), image.getSteps());
+        return generateImage(request, account, true, image.getSeed(), image.getImgGenProvider().getId());
+    }
+
+    public ImgGenResponse regenerateImage(int imageId, Account account) throws Exception {
+        Image image = imageRepository.findById(imageId).orElseThrow(() -> new IllegalArgumentException("Invalid image id"));
+        //ownership check (for now just creator check)
+        if (!account.getId().equals(image.getCreatorAccount().getId())){
+            throw new IllegalArgumentException(OWNERSHIP_ERROR);
+        }
+        ImgGenRequest request = new ImgGenRequest(image.getPrompt(), image.getNegativePrompt(), image.getOrientation(), image.getImgGenProvider().getId(), image.getImgGenModule().getId(), image.getImgGenProvider().getId(), image.getSteps());
+        return generateImage(request, account, true, 0, image.getImgGenProvider().getId());
+    }
+
+    public ImgGenResponse generateImage(ImgGenRequest request, Account account, boolean regeneration, int seed, int providerId) throws Exception {
+        //if providerId not specified we have to derive it from moduleId
+        if (providerId == 0){
+            ImgGenModule module = imgGenModuleRepository.findById(request.getModuleId()).orElseThrow(() -> new IllegalArgumentException("Invalid module id"));
+            providerId = module.getProvider().getId();
+        }
         //calculate size from orientation string
         int width = BASE_SIZE;
         int height = BASE_SIZE;
@@ -54,25 +79,24 @@ public class ImageGenerationService {
         ImgGenCommonResult generationResult = null;
 
 
+        String positivePromptFinal = request.getPrompt();
+        String negativePromptFinal = request.getNegativePrompt();
+
         boolean isRaw = ImgGenModuleId.RAW_MODEL_MODULES.contains(request.getModuleId());
-        String positivePromptCustom = Prompts.positivePrompt(request.getModuleId(), isRaw);
-        String negativePromptCustom = Prompts.negativePrompt(request.getModuleId(), isRaw);
+        boolean skipPromptCustomization = isRaw || regeneration;
+
+        if (!skipPromptCustomization) {
+            positivePromptFinal = Prompts.positivePromptCustomization(request.getModuleId(), request.getPrompt());
+            negativePromptFinal = Prompts.negativePrompt(request.getModuleId());
+        }
+
         int steps = request.getSteps() == null || request.getSteps() <= 0 ? 25 : request.getSteps();
-        if (ProviderId.SDXL_Providers().contains(request.getProviderId())){
-            String modelName = ProviderId.toModelName(request.getProviderId());
-            String finalPositivePrompt;
-            String finalNegativePrompt = negativePromptCustom;
-            if (ImgGenModuleId.RAW_MODEL_MODULES.contains(request.getModuleId())){
-                finalPositivePrompt = request.getPrompt();
-                finalNegativePrompt = request.getNegativePrompt();
-            } else if (request.getModuleId() == ImgGenModuleId.REALISTIC_PORTRAIT){
-                finalPositivePrompt = "Photograph of " + request.getPrompt() + ", " + positivePromptCustom;
-            } else {
-                finalPositivePrompt = positivePromptCustom + ", " + request.getPrompt();
-            }
-            GetImgAI_StableDiffusionRequest r = new GetImgAI_StableDiffusionRequest(modelName, finalPositivePrompt, finalNegativePrompt, "url","jpeg",  steps, width, height);
-            if (request.getSeed() != null && request.getSeed() != 0){
-                r.setSeed(request.getSeed());
+
+        if (ProviderId.SDXL_Providers().contains(providerId)){
+            String modelName = ProviderId.toModelName(providerId);
+            GetImgAI_StableDiffusionRequest r = new GetImgAI_StableDiffusionRequest(modelName, positivePromptFinal, negativePromptFinal, "url","jpeg",  steps, width, height);
+            if (seed != 0){
+                r.setSeed(seed);
             }
             generationResult = GetImgAI.imageGeneration(r);
         } else {
@@ -92,9 +116,9 @@ public class ImageGenerationService {
             throw e;
         }
         //create img gen result
-        Image dbImage = new Image(generationResult.getPrice(), request.getOrientation(), generationResult.getSeed(), image.getFullSize(), image.getCompressed(), image.getThumbnail(), Instant.now(), request.getPrompt(), request.getNegativePrompt());
+        Image dbImage = new Image(generationResult.getPrice(), request.getOrientation(), generationResult.getSeed(), image.getFullSize(), image.getCompressed(), image.getThumbnail(), Instant.now(), request.getPrompt(), request.getNegativePrompt(), steps);
         ImgGenModule module = new ImgGenModule(request.getModuleId());
-        ImgGenProvider provider = new ImgGenProvider(request.getProviderId());
+        ImgGenProvider provider = new ImgGenProvider(providerId);
         dbImage.setImgGenModule(module);
         dbImage.setImgGenProvider(provider);
         dbImage.setCreatorAccount(account);

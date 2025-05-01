@@ -2,6 +2,7 @@ package com.plainprog.grandslam_ai.controllers;
 
 import com.plainprog.grandslam_ai.entity.account.Account;
 import com.plainprog.grandslam_ai.object.request_models.generation.ImgGenRequest;
+import com.plainprog.grandslam_ai.object.request_models.generation.SeedRegenRequest;
 import com.plainprog.grandslam_ai.object.response_models.generation.ImgGenModulesResponse;
 import com.plainprog.grandslam_ai.object.response_models.generation.ModulesHealthCheckResponse;
 import com.plainprog.grandslam_ai.service.auth.helper.SessionDataHolder;
@@ -29,7 +30,35 @@ public class GeneratedImagesController {
     public ResponseEntity<?> generateImage(@RequestBody ImgGenRequest request) {
         Account account = SessionDataHolder.getPayload().getAccount();
         try {
-            var result = imageGenerationService.generateImage(request, account);
+            var result = imageGenerationService.generateImage(request, account, false, 0, 0);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error generating image: " + e.getMessage());
+        }
+    }
+    /**
+     * Endpoint for regenerating images based on same request.
+     * [Covered with]: ImageGenerationTest#imageRegenerationTest()
+     */
+    @PostMapping("/image/{imageId}/regen")
+    public ResponseEntity<?> regenerateImage(@PathVariable Integer imageId) {
+        Account account = SessionDataHolder.getPayload().getAccount();
+        try {
+            var result = imageGenerationService.regenerateImage(imageId, account);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error generating image: " + e.getMessage());
+        }
+    }
+    /**
+     * Endpoint for regenerating images based on seed
+     * [Covered with]: ImageGenerationTest#seedGenerationTest()
+     */
+    @PostMapping("/image/{imageId}/seed-regen")
+    public ResponseEntity<?> regenerateImageWithSeed(@PathVariable Integer imageId, @RequestBody SeedRegenRequest request) {
+        Account account = SessionDataHolder.getPayload().getAccount();
+        try {
+            var result = imageGenerationService.seedRegenerateImage(imageId, account, request.getPrompt());
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error generating image: " + e.getMessage());

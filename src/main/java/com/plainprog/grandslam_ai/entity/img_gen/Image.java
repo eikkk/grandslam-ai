@@ -51,10 +51,13 @@ public class Image {
     @Column(name = "negative_prompt")
     private String negativePrompt;
 
+    @Column(name = "steps")
+    private Integer steps;
+
     public Image() {
     }
 
-    public Image(Double price, String orientation, Integer seed, String fullsize, String compressed, String thumbnail, Instant createdAt, String prompt, String negativePrompt) {
+    public Image(Double price, String orientation, Integer seed, String fullsize, String compressed, String thumbnail, Instant createdAt, String prompt, String negativePrompt, Integer steps) {
         this.price = price;
         this.orientation = orientation;
         this.seed = seed;
@@ -64,6 +67,7 @@ public class Image {
         this.createdAt = createdAt;
         this.prompt = prompt;
         this.negativePrompt = negativePrompt;
+        this.steps = steps;
     }
 
     public Integer getId() {
@@ -167,5 +171,11 @@ public class Image {
 
     public void setNegativePrompt(String negativePrompt) {
         this.negativePrompt = negativePrompt;
+    }
+    public Integer getSteps() {
+        return steps;
+    }
+    public void setSteps(Integer steps) {
+        this.steps = steps;
     }
 }
