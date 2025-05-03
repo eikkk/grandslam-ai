@@ -17,6 +17,10 @@ public class Image {
     private Account creatorAccount;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_account_id")
+    private Account ownerAccount;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "module_id")
     private ImgGenModule imgGenModule;
 
@@ -177,5 +181,13 @@ public class Image {
     }
     public void setSteps(Integer steps) {
         this.steps = steps;
+    }
+
+    public Account getOwnerAccount() {
+        return ownerAccount;
+    }
+
+    public void setOwnerAccount(Account ownerAccount) {
+        this.ownerAccount = ownerAccount;
     }
 }

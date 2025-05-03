@@ -6,6 +6,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ImageRepository extends JpaRepository<Image, Integer> {
-    Optional<Image> findFirstByCreatorAccountId(Integer creatorAccountId);
-    Optional<Image> findFirstByCreatorAccountIdNot(Integer id);
+    Optional<Image> findFirstByOwnerAccountId(Integer ownerAccountId);
+    Optional<Image> findFirstByOwnerAccountIdNot(Integer id);
 }

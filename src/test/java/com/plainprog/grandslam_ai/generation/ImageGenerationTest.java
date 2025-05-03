@@ -99,15 +99,15 @@ public class ImageGenerationTest {
         assertNotNull(imageDB.getCreatedAt(), "Image creation time should not be null");
         assertNotNull(imageDB.getPrompt(), "Image prompt should not be null");
         assertNotNull(imageDB.getNegativePrompt(), "Image negative prompt should not be null");
-
+        assertEquals(imageDB.getOwnerAccount().getId(), testUserHelper.ensureTestUserExists().getId(), "Wrong image owner");
     }
 
     @Test
     public void imageRegenerationTest() throws Exception {
         Account acc = testUserHelper.ensureTestUserExists();
         //Given
-        Optional<Image> testImage = imageRepository.findFirstByCreatorAccountId(acc.getId());
-        Optional<Image> imageOfOtherOwner = imageRepository.findFirstByCreatorAccountIdNot(acc.getId());
+        Optional<Image> testImage = imageRepository.findFirstByOwnerAccountId(acc.getId());
+        Optional<Image> imageOfOtherOwner = imageRepository.findFirstByOwnerAccountIdNot(acc.getId());
 
         assertTrue(testImage.isPresent());
         assertTrue(imageOfOtherOwner.isPresent());
@@ -142,6 +142,9 @@ public class ImageGenerationTest {
         ImgGenResponse response = responseEntity.getBody();
         assert response != null;
         imageResultValidation(response);
+        var imageDB = imageRepository.findById(response.getImageId()).orElse(null);
+        assertNotNull(imageDB, "Image should exist in the database");
+        assertEquals(imageDB.getOwnerAccount().getId(), testUserHelper.ensureTestUserExists().getId(), "Wrong image owner");
 
         //Try to request regeneration of image of other owner
         ResponseEntity<ImgGenResponse> responseEntityOtherOwner = null;
@@ -161,8 +164,8 @@ public class ImageGenerationTest {
     public void seedGenerationTest() throws Exception {
         Account acc = testUserHelper.ensureTestUserExists();
         //Given
-        Optional<Image> testImage = imageRepository.findFirstByCreatorAccountId(acc.getId());
-        Optional<Image> imageOfOtherOwner = imageRepository.findFirstByCreatorAccountIdNot(acc.getId());
+        Optional<Image> testImage = imageRepository.findFirstByOwnerAccountId(acc.getId());
+        Optional<Image> imageOfOtherOwner = imageRepository.findFirstByOwnerAccountIdNot(acc.getId());
 
         assertTrue(testImage.isPresent());
         assertTrue(imageOfOtherOwner.isPresent());
@@ -201,9 +204,11 @@ public class ImageGenerationTest {
         ImgGenResponse response = responseEntity.getBody();
         assert response != null;
         imageResultValidation(response);
-        Image responseImage = imageRepository.findById(response.getImageId()).orElse(null);
-        assertNotNull(responseImage, "Image should exist in the database");
-        assertEquals(testImage.get().getSeed(), responseImage.getSeed(), "Seed should be the same as in the original image");
+        Image imageDB = imageRepository.findById(response.getImageId()).orElse(null);
+        assertNotNull(imageDB, "Image should exist in the database");
+        assertEquals(testImage.get().getSeed(), imageDB.getSeed(), "Seed should be the same as in the original image");
+        assertEquals(imageDB.getOwnerAccount().getId(), testUserHelper.ensureTestUserExists().getId(), "Wrong image owner");
+
 
         //Try to request regeneration of image of other owner
         ResponseEntity<ImgGenResponse> responseEntityOtherOwner = null;

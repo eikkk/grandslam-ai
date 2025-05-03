@@ -41,8 +41,8 @@ public class ImageGenerationService {
 
     public ImgGenResponse seedRegenerateImage(int imageId, Account account, String prompt) throws Exception {
         Image image = imageRepository.findById(imageId).orElseThrow(() -> new IllegalArgumentException("Invalid image id"));
-        //ownership check (for now just creator check)
-        if (!account.getId().equals(image.getCreatorAccount().getId())){
+        //ownership check
+        if (!account.getId().equals(image.getOwnerAccount().getId())){
             throw new IllegalArgumentException(OWNERSHIP_ERROR);
         }
         ImgGenRequest request = new ImgGenRequest(prompt, image.getNegativePrompt(), image.getOrientation(), image.getImgGenProvider().getId(), image.getImgGenModule().getId(), image.getImgGenProvider().getId(), image.getSteps());
@@ -51,8 +51,8 @@ public class ImageGenerationService {
 
     public ImgGenResponse regenerateImage(int imageId, Account account) throws Exception {
         Image image = imageRepository.findById(imageId).orElseThrow(() -> new IllegalArgumentException("Invalid image id"));
-        //ownership check (for now just creator check)
-        if (!account.getId().equals(image.getCreatorAccount().getId())){
+        //ownership check
+        if (!account.getId().equals(image.getOwnerAccount().getId())){
             throw new IllegalArgumentException(OWNERSHIP_ERROR);
         }
         ImgGenRequest request = new ImgGenRequest(image.getPrompt(), image.getNegativePrompt(), image.getOrientation(), image.getImgGenProvider().getId(), image.getImgGenModule().getId(), image.getImgGenProvider().getId(), image.getSteps());
@@ -122,6 +122,7 @@ public class ImageGenerationService {
         dbImage.setImgGenModule(module);
         dbImage.setImgGenProvider(provider);
         dbImage.setCreatorAccount(account);
+        dbImage.setOwnerAccount(account);
         imageRepository.save(dbImage);
         return new ImgGenResponse(dbImage.getId(), image, generationResult.getSeed());
     }
