@@ -2,6 +2,7 @@ package com.plainprog.grandslam_ai.entity.img_gen;
 
 import com.plainprog.grandslam_ai.entity.account.Account;
 import jakarta.persistence.*;
+import org.checkerframework.checker.units.qual.C;
 
 import java.time.Instant;
 
@@ -57,6 +58,9 @@ public class Image {
 
     @Column(name = "steps")
     private Integer steps;
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
 
     public Image() {
     }
@@ -189,5 +193,13 @@ public class Image {
 
     public void setOwnerAccount(Account ownerAccount) {
         this.ownerAccount = ownerAccount;
+    }
+
+    public Instant getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(Instant deletedAt) {
+        this.deletedAt = deletedAt;
     }
 }
