@@ -9,7 +9,7 @@ import java.time.Instant;
 public class Account {
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @Column(name = "email")
     private String email;
@@ -45,7 +45,7 @@ public class Account {
         this.emailVerified = emailVerified;
     }
 
-    public Integer getId() {
+    public Long getId() {
         return id;
     }
 

@@ -9,7 +9,7 @@ import java.time.Instant;
 public class AccountSecurity {
     @Id
     @Column(name = "account_id")
-    private Integer accountId;
+    private Long accountId;
 
     @Column(name = "hash_pass")
     private String hashPass;
@@ -23,18 +23,18 @@ public class AccountSecurity {
     public AccountSecurity() {
     }
 
-    public AccountSecurity(Integer accountId, String hashPass, String verifyEmailToken, Instant verifyEmailTokenCreatedAt) {
+    public AccountSecurity(Long accountId, String hashPass, String verifyEmailToken, Instant verifyEmailTokenCreatedAt) {
         this.accountId = accountId;
         this.hashPass = hashPass;
         this.verifyEmailToken = verifyEmailToken;
         this.verifyEmailTokenCreatedAt = verifyEmailTokenCreatedAt;
     }
 
-    public Integer getAccountId() {
+    public Long getAccountId() {
         return accountId;
     }
 
-    public void setAccountId(Integer accountId) {
+    public void setAccountId(Long accountId) {
         this.accountId = accountId;
     }
 

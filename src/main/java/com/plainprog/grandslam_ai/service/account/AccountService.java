@@ -161,7 +161,7 @@ public class AccountService {
      * Deletes account by id
      * @param id id of the account
      */
-    public void deleteAccount(Integer id) {
+    public void deleteAccount(Long id) {
         accountRepository.deleteById(id);
     }
 }

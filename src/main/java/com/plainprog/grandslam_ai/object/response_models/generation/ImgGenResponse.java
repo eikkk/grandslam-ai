@@ -3,11 +3,11 @@ package com.plainprog.grandslam_ai.object.response_models.generation;
 import com.plainprog.grandslam_ai.object.dto.image.ImageDTO;
 
 public class ImgGenResponse {
-    private int imageId;
+    private long imageId;
     private ImageDTO image;
     private int seed;
 
-    public ImgGenResponse(int imageId, ImageDTO image, int seed) {
+    public ImgGenResponse(long imageId, ImageDTO image, int seed) {
         this.imageId = imageId;
         this.image = image;
         this.seed = seed;
@@ -16,7 +16,7 @@ public class ImgGenResponse {
     public ImgGenResponse() {
     }
 
-    public int getImageId() {
+    public long getImageId() {
         return imageId;
     }
 

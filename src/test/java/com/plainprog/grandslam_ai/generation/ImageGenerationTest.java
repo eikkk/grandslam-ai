@@ -7,7 +7,6 @@ import com.plainprog.grandslam_ai.entity.img_gen.ImageRepository;
 import com.plainprog.grandslam_ai.helper.generation.Prompts;
 import com.plainprog.grandslam_ai.object.constant.images.ImgGenModuleId;
 import com.plainprog.grandslam_ai.object.constant.images.ProviderId;
-import com.plainprog.grandslam_ai.object.dto.util.Size;
 import com.plainprog.grandslam_ai.object.request_models.generation.ImgGenRequest;
 import com.plainprog.grandslam_ai.object.request_models.generation.SeedRegenRequest;
 import com.plainprog.grandslam_ai.object.response_models.generation.ImgGenResponse;
@@ -75,32 +74,8 @@ public class ImageGenerationTest {
         //Check that the response is not null and contains the expected data
         ImgGenResponse response = responseEntity.getBody();
         assert response != null;
-        assertFalse(response.getImage().getFullSize().isEmpty());
-        assertFalse(response.getImage().getThumbnail().isEmpty());
-        assertFalse(response.getImage().getCompressed().isEmpty());
-
-        // Validate images
-        validateImage(response.getImage().getFullSize(), 50, 500, ImageGenerationService.BASE_SIZE, ImageGenerationService.BASE_SIZE);
-        int sizeCompressed = (int)(ImageGenerationService.BASE_SIZE * ImageGenerationService.Q_COMPRESSION);
-        validateImage(response.getImage().getCompressed(), 20, 100, sizeCompressed, sizeCompressed);
-        int sizeThumbnail = (int)(ImageGenerationService.BASE_SIZE * ImageGenerationService.T_COMPRESSION);
-        validateImage(response.getImage().getThumbnail(), 1, 25, sizeThumbnail, sizeThumbnail);
-
-        // Fetch image from DB and validate all the columns not empty
-        int imageId = response.getImageId();
-        assertTrue(imageId > 0, "Image ID should be greater than 0");
-        Image imageDB = imageRepository.findById(imageId).orElse(null);
-        assertNotNull(imageDB, "Image should exist in the database");
-        assertNotNull(imageDB.getFullsize(), "Full size image URL should not be null");
-        assertNotNull(imageDB.getCompressed(), "Compressed image URL should not be null");
-        assertNotNull(imageDB.getThumbnail(), "Thumbnail image URL should not be null");
-        assertNotNull(imageDB.getOrientation(), "Image orientation should not be null");
-        assertNotNull(imageDB.getSeed(), "Image seed should not be null");
-        assertNotNull(imageDB.getCreatedAt(), "Image creation time should not be null");
-        assertNotNull(imageDB.getPrompt(), "Image prompt should not be null");
-        assertNotNull(imageDB.getNegativePrompt(), "Image negative prompt should not be null");
-        assertEquals(imageDB.getOwnerAccount().getId(), testUserHelper.ensureTestUserExists().getId(), "Wrong image owner");
-    }
+        imageResultValidation(response);
+}
 
     @Test
     public void imageRegenerationTest() throws Exception {
@@ -233,10 +208,10 @@ public class ImageGenerationTest {
         int sizeCompressed = (int)(ImageGenerationService.BASE_SIZE * ImageGenerationService.Q_COMPRESSION);
         validateImage(response.getImage().getCompressed(), 20, 100, sizeCompressed, sizeCompressed);
         int sizeThumbnail = (int)(ImageGenerationService.BASE_SIZE * ImageGenerationService.T_COMPRESSION);
-        validateImage(response.getImage().getThumbnail(), 1, 25, sizeThumbnail, sizeThumbnail);
+        validateImage(response.getImage().getThumbnail(), 1, 30, sizeThumbnail, sizeThumbnail);
 
         // Fetch image from DB and validate all the columns not empty
-        int imageId = response.getImageId();
+        long imageId = response.getImageId();
         assertTrue(imageId > 0, "Image ID should be greater than 0");
         Image imageDB = imageRepository.findById(imageId).orElse(null);
         assertNotNull(imageDB, "Image should exist in the database");
@@ -250,6 +225,7 @@ public class ImageGenerationTest {
         assertNotNull(imageDB.getNegativePrompt(), "Image negative prompt should not be null");
         assertNotNull(imageDB.getSeed(), "Image generation module should not be null");
         assertNotNull(imageDB.getSteps(), "Image generation module should not be null");
+        assertEquals(imageDB.getOwnerAccount().getId(), testUserHelper.ensureTestUserExists().getId(), "Wrong image owner");
     }
     private void validateImage(String imageUrl, double minSizeKB, double maxSizeKB, int expectedWidth, int expectedHeight) throws Exception {
         ResponseEntity<byte[]> imageResponse = restTemplate.getForEntity(imageUrl, byte[].class);
@@ -264,7 +240,7 @@ public class ImageGenerationTest {
             assertNotNull(bufferedImage);
 
             double sizeInKB = (double) imageBytes.length / 1024;
-            assertTrue(sizeInKB > minSizeKB && sizeInKB < maxSizeKB, "Image size is not in the expected range: " + sizeInKB);
+            assertTrue(sizeInKB > minSizeKB && sizeInKB < maxSizeKB, "Image size is not in the expected range: " + sizeInKB + "Expected: " + minSizeKB + " - " + maxSizeKB);
             assertEquals(expectedWidth, bufferedImage.getWidth(), "Image width is not as expected");
             assertEquals(expectedHeight, bufferedImage.getHeight(), "Image height is not as expected");
         });

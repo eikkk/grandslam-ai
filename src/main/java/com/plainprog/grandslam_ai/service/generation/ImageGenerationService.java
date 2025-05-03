@@ -39,7 +39,7 @@ public class ImageGenerationService {
     @Autowired
     private ImgGenModuleRepository imgGenModuleRepository;
 
-    public ImgGenResponse seedRegenerateImage(int imageId, Account account, String prompt) throws Exception {
+    public ImgGenResponse seedRegenerateImage(long imageId, Account account, String prompt) throws Exception {
         Image image = imageRepository.findById(imageId).orElseThrow(() -> new IllegalArgumentException("Invalid image id"));
         //ownership check
         if (!account.getId().equals(image.getOwnerAccount().getId())){
@@ -49,7 +49,7 @@ public class ImageGenerationService {
         return generateImage(request, account, true, image.getSeed(), image.getImgGenProvider().getId());
     }
 
-    public ImgGenResponse regenerateImage(int imageId, Account account) throws Exception {
+    public ImgGenResponse regenerateImage(long imageId, Account account) throws Exception {
         Image image = imageRepository.findById(imageId).orElseThrow(() -> new IllegalArgumentException("Invalid image id"));
         //ownership check
         if (!account.getId().equals(image.getOwnerAccount().getId())){

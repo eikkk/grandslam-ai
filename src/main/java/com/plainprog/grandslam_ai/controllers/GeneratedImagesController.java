@@ -41,7 +41,7 @@ public class GeneratedImagesController {
      * [Covered with]: ImageGenerationTest#imageRegenerationTest()
      */
     @PostMapping("/image/{imageId}/regen")
-    public ResponseEntity<?> regenerateImage(@PathVariable Integer imageId) {
+    public ResponseEntity<?> regenerateImage(@PathVariable Long imageId) {
         Account account = SessionDataHolder.getPayload().getAccount();
         try {
             var result = imageGenerationService.regenerateImage(imageId, account);
@@ -55,7 +55,7 @@ public class GeneratedImagesController {
      * [Covered with]: ImageGenerationTest#seedGenerationTest()
      */
     @PostMapping("/image/{imageId}/seed-regen")
-    public ResponseEntity<?> regenerateImageWithSeed(@PathVariable Integer imageId, @RequestBody SeedRegenRequest request) {
+    public ResponseEntity<?> regenerateImageWithSeed(@PathVariable Long imageId, @RequestBody SeedRegenRequest request) {
         Account account = SessionDataHolder.getPayload().getAccount();
         try {
             var result = imageGenerationService.seedRegenerateImage(imageId, account, request.getPrompt());
