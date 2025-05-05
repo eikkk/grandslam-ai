@@ -20,7 +20,12 @@ public class IncubatorController {
     @Autowired
     private IncubatorService incubatorService;
 
-    //Endpoint for batch deleting incubator images
+
+    /**
+     * Endpoint for deleting incubator images.
+     * Also deletes the image itself completely from the system and gcp storage.
+     * [Covered with]: IncubatorTests#testIncubatorDeletion()
+     */
     @PostMapping("/batch/delete")
     public ResponseEntity<OperationResultDTO> deleteIncubatorImages(@RequestBody BatchOperationOnLongIds imageIds) {
         Account account = SessionDataHolder.getPayload().getAccount();
