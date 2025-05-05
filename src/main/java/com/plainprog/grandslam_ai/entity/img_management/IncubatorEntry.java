@@ -13,7 +13,7 @@ public class IncubatorEntry implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "image_id", nullable = false, unique = true,
             foreignKey = @ForeignKey(name = "incubator_image_fk"))
     private Image image;

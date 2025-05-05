@@ -2,6 +2,8 @@ package com.plainprog.grandslam_ai.service.generation;
 
 import com.plainprog.grandslam_ai.entity.account.Account;
 import com.plainprog.grandslam_ai.entity.img_gen.*;
+import com.plainprog.grandslam_ai.entity.img_management.IncubatorEntry;
+import com.plainprog.grandslam_ai.entity.img_management.IncubatorEntryRepository;
 import com.plainprog.grandslam_ai.helper.generation.GetImgAI;
 import com.plainprog.grandslam_ai.helper.generation.Prompts;
 import com.plainprog.grandslam_ai.helper.image.ImageCompressor;
@@ -38,6 +40,8 @@ public class ImageGenerationService {
     private ImageRepository imageRepository;
     @Autowired
     private ImgGenModuleRepository imgGenModuleRepository;
+    @Autowired
+    private IncubatorEntryRepository incubatorEntryRepository;
 
     public ImgGenResponse seedRegenerateImage(long imageId, Account account, String prompt) throws Exception {
         Image image = imageRepository.findById(imageId).orElseThrow(() -> new IllegalArgumentException("Invalid image id"));
@@ -123,7 +127,10 @@ public class ImageGenerationService {
         dbImage.setImgGenProvider(provider);
         dbImage.setCreatorAccount(account);
         dbImage.setOwnerAccount(account);
-        imageRepository.save(dbImage);
+        //create incubator entry
+        IncubatorEntry incubatorEntry = new IncubatorEntry(dbImage,false);
+        incubatorEntryRepository.save(incubatorEntry);
+
         return new ImgGenResponse(dbImage.getId(), image, generationResult.getSeed());
     }
 

@@ -4,6 +4,8 @@ import com.plainprog.grandslam_ai.config.TestConfig;
 import com.plainprog.grandslam_ai.entity.account.Account;
 import com.plainprog.grandslam_ai.entity.img_gen.Image;
 import com.plainprog.grandslam_ai.entity.img_gen.ImageRepository;
+import com.plainprog.grandslam_ai.entity.img_management.IncubatorEntry;
+import com.plainprog.grandslam_ai.entity.img_management.IncubatorEntryRepository;
 import com.plainprog.grandslam_ai.helper.generation.Prompts;
 import com.plainprog.grandslam_ai.object.constant.images.ImgGenModuleId;
 import com.plainprog.grandslam_ai.object.constant.images.ProviderId;
@@ -41,6 +43,8 @@ public class ImageGenerationTest {
     private TestUserHelper testUserHelper;
     @Autowired
     private ImageRepository imageRepository;
+    @Autowired
+    private IncubatorEntryRepository incubatorEntryRepository;
 
     @Test
     public void imageGenerationEndpointTest() throws Exception {
@@ -226,6 +230,11 @@ public class ImageGenerationTest {
         assertNotNull(imageDB.getSeed(), "Image generation module should not be null");
         assertNotNull(imageDB.getSteps(), "Image generation module should not be null");
         assertEquals(imageDB.getOwnerAccount().getId(), testUserHelper.ensureTestUserExists().getId(), "Wrong image owner");
+
+        // Validate incubator entry
+        IncubatorEntry incubatorEntry = incubatorEntryRepository.findByImageId(imageId);
+        assertNotNull(incubatorEntry, "Incubator entry should exist in the database");
+        assertFalse(incubatorEntry.isShortlisted(), "Incubator entry should not be shortlisted by default");
     }
     private void validateImage(String imageUrl, double minSizeKB, double maxSizeKB, int expectedWidth, int expectedHeight) throws Exception {
         ResponseEntity<byte[]> imageResponse = restTemplate.getForEntity(imageUrl, byte[].class);
