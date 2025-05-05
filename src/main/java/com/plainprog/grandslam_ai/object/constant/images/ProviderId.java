@@ -11,7 +11,7 @@ public final class ProviderId {
     public static final int COUNTERFEIT_XL_V2_5 = 5;
 
     public static List<Integer> SDXL_Providers(){
-        return List.of(STABLE_DIFFUSION_XL, REALVIS_XL_4);
+        return List.of(STABLE_DIFFUSION_XL, REALVIS_XL_4, SDVN7_NIJI_STYLE_XL, REAL_CARTOON_XL_V6, COUNTERFEIT_XL_V2_5);
     }
 
     public static String toModelName(int providerId){

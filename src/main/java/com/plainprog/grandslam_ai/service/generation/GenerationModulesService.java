@@ -21,7 +21,7 @@ public class GenerationModulesService {
     @Autowired
     private ImgGenGroupRepository imgGenGroupRepository;
 
-    public ImgGenModulesResponse getModules(){
+    public ImgGenModulesResponse getActiveModules(){
         Set<Integer> groupIds = new HashSet<>();
         Map<Integer, List<ImgGenModuleModel>> groupModuleMap = new HashMap<>();
         Map<Integer, ImgGenGroup> groupMap = new HashMap<>();

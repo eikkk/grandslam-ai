@@ -70,7 +70,7 @@ public class GeneratedImagesController {
      */
     @GetMapping(value = "/modules")
     public ResponseEntity<ImgGenModulesResponse> getModules(){
-        ImgGenModulesResponse response = generationModulesService.getModules();
+        ImgGenModulesResponse response = generationModulesService.getActiveModules();
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
     /**

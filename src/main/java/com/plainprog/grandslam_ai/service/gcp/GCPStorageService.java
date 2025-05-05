@@ -3,10 +3,7 @@ package com.plainprog.grandslam_ai.service.gcp;
 
 import com.google.auth.Credentials;
 import com.google.auth.oauth2.GoogleCredentials;
-import com.google.cloud.storage.Blob;
-import com.google.cloud.storage.Bucket;
-import com.google.cloud.storage.Storage;
-import com.google.cloud.storage.StorageOptions;
+import com.google.cloud.storage.*;
 import com.plainprog.grandslam_ai.helper.image.ImageCompressor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -14,6 +11,8 @@ import org.springframework.stereotype.Service;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class GCPStorageService {
@@ -55,5 +54,35 @@ public class GCPStorageService {
         } else {
             return false;
         }
+    }
+    public List<Boolean> deleteImages(List<String> publicURLs) {
+        List<Boolean> results = new ArrayList<>();
+        List<Blob> blobsToDelete = new ArrayList<>();
+
+        for (String publicURL : publicURLs) {
+            String filePath = publicURL.split(bucket.getName() + "/")[1];
+            Blob blob = bucket.get(filePath);
+            if (blob != null && blob.exists()) {
+                blobsToDelete.add(blob);
+            } else {
+                results.add(false); // File not found
+            }
+        }
+
+        if (!blobsToDelete.isEmpty()) {
+            Iterable<BlobId> blobIds = blobsToDelete.stream()
+                    .map(Blob::getBlobId)
+                    .toList();
+            List<Boolean> batchResults = bucket.getStorage().delete(blobIds);
+            results.addAll(batchResults);
+        }
+
+        return results;
+    }
+
+    public boolean exists(String url) {
+        String filePath = url.split(bucket.getName() + "/")[1];
+        Blob blob = bucket.get(filePath);
+        return blob != null && blob.exists();
     }
 }
