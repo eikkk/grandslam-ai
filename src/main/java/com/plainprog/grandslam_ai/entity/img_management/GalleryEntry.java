@@ -3,6 +3,7 @@ package com.plainprog.grandslam_ai.entity.img_management;
 import com.plainprog.grandslam_ai.entity.img_gen.Image;
 import jakarta.persistence.*;
 import java.io.Serializable;
+import java.time.Instant;
 
 @Entity
 @Table(name = "gallery_entry")
@@ -35,6 +36,9 @@ public class GalleryEntry implements Serializable {
 
     @Column(nullable = false)
     private boolean shortlisted = false;
+
+    @Column(name = "created_at")
+    private Instant createdAt;
 
     // Constructors
     public GalleryEntry() {}
@@ -91,5 +95,20 @@ public class GalleryEntry implements Serializable {
 
     public void setShortlisted(boolean shortlisted) {
         this.shortlisted = shortlisted;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    @PrePersist
+    public void prePersist() {
+        if (createdAt == null) {
+            createdAt = Instant.now();
+        }
     }
 }

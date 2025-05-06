@@ -5,6 +5,7 @@ import com.plainprog.grandslam_ai.object.dto.util.OperationOutcome;
 import com.plainprog.grandslam_ai.object.dto.util.OperationResultDTO;
 import com.plainprog.grandslam_ai.object.request_models.other.BatchOperationOnLongIds;
 import com.plainprog.grandslam_ai.service.auth.helper.SessionDataHolder;
+import com.plainprog.grandslam_ai.service.gallery.GalleryService;
 import com.plainprog.grandslam_ai.service.incubator.IncubatorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +20,8 @@ public class IncubatorController {
 
     @Autowired
     private IncubatorService incubatorService;
-
+    @Autowired
+    private GalleryService galleryService;
 
     /**
      * Endpoint for deleting incubator images.
@@ -32,6 +34,21 @@ public class IncubatorController {
         try {
             incubatorService.deleteIncubatorImages(imageIds.getIds(), account);
             return ResponseEntity.ok(new OperationResultDTO(OperationOutcome.SUCCESS, "Incubator images deleted successfully", null));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(new OperationResultDTO(OperationOutcome.FAILURE, "Failed to delete", e.getMessage()));
+        }
+    }
+    /**
+     * Endpoint for promoting incubator images.
+     * Removes incubator entry and creates a gallery entry
+     * [Covered with]: IncubatorTests#testIncubatorPromotion()
+     */
+    @PostMapping("/batch/promote")
+    public ResponseEntity<OperationResultDTO> promoteIncubatorImages(@RequestBody BatchOperationOnLongIds imageIds) {
+        Account account = SessionDataHolder.getPayload().getAccount();
+        try {
+            galleryService.promoteIncubatorImages(imageIds.getIds(), account);
+            return ResponseEntity.ok(new OperationResultDTO(OperationOutcome.SUCCESS, "Incubator images promoted successfully", null));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(new OperationResultDTO(OperationOutcome.FAILURE, "Failed to delete", e.getMessage()));
         }

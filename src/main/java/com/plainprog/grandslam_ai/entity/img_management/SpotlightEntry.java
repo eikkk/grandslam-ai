@@ -70,7 +70,6 @@ public class SpotlightEntry implements Serializable {
 
     @PrePersist
     public void prePersist() {
-        // Set the current time if 'insertedAt' is null
         if (createdAt == null) {
             createdAt = Instant.now();
         }

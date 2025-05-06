@@ -7,6 +7,8 @@ import com.plainprog.grandslam_ai.entity.account.AccountRepository;
 import com.plainprog.grandslam_ai.entity.account_security.AccountSecurity;
 import com.plainprog.grandslam_ai.entity.account_security.AccountSecurityRepository;
 import com.plainprog.grandslam_ai.entity.img_gen.Image;
+import com.plainprog.grandslam_ai.entity.img_management.GalleryEntry;
+import com.plainprog.grandslam_ai.entity.img_management.GalleryEntryRepository;
 import com.plainprog.grandslam_ai.entity.img_management.IncubatorEntry;
 import com.plainprog.grandslam_ai.entity.img_management.IncubatorEntryRepository;
 import com.plainprog.grandslam_ai.object.dto.util.OperationOutcome;
@@ -54,15 +56,11 @@ public class IncubatorTests {
     @Autowired
     private IncubatorEntryRepository incubatorEntryRepository;
     @Autowired
+    private GalleryEntryRepository galleryEntryRepository;
+    @Autowired
     private TestGenerationHelper testGenerationHelper;
     @Autowired
     private GCPStorageService gcpStorageService;
-    @Autowired
-    private AccountRepository accountRepository;
-    @Autowired
-    private AccountSecurityRepository accountSecurityRepository;
-    @Autowired
-    private AccountService accountService;
     @Autowired
     private TestUserHelper testUserHelper;
 
@@ -144,5 +142,42 @@ public class IncubatorTests {
             assertFalse(gcpStorageService.exists(url), "Image not deleted from GCP: " + url);
         }
 
+    }
+
+    @Test
+    public void testIncubatorPromotion(){
+        assertTrue(testEntries.size() > 1, "Not enough entries to test deletion");
+        List<Long> incubatorEntryIds = testEntries.stream()
+                .map(entry -> entry.getImage().getId())
+                .toList();
+        List<Image> images = testEntries.stream()
+                .map(IncubatorEntry::getImage)
+                .toList();
+        List<Long> imageIds = images.stream()
+                .map(Image::getId)
+                .toList();
+
+        HttpHeaders headersWithAuth = testUserHelper.initiateSession();
+        BatchOperationOnLongIds request = new BatchOperationOnLongIds(imageIds);
+        headersWithAuth.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
+        assertTrue(headersWithAuth.containsKey("Cookie"));
+
+        HttpEntity<BatchOperationOnLongIds> entityWithAuth = new HttpEntity<>(request, headersWithAuth);
+        ResponseEntity<OperationResultDTO> responseEntity =
+                restTemplate.postForEntity(baseUrl + "/api/incubator/batch/promote", entityWithAuth, OperationResultDTO.class);
+
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+
+        //verify that incubator entries are deleted
+        for (Long id : incubatorEntryIds) {
+            assertFalse(incubatorEntryRepository.existsById(id), "Incubator entry not deleted: " + id);
+        }
+        //verify that gallery entries are created. We have image ids. and gallery entries have image prop with id
+        List<GalleryEntry> galleryEntries = galleryEntryRepository.findAllByImageIdIn(imageIds);
+        assertEquals(galleryEntries.size(), imageIds.size(), "Not all images promoted to gallery");
+        for (GalleryEntry entry : galleryEntries) {
+           assertNotNull(entry.getCreatedAt());
+           assertNull(entry.getGroup());
+        }
     }
 }
