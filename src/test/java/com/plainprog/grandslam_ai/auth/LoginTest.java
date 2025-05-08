@@ -2,14 +2,7 @@ package com.plainprog.grandslam_ai.auth;
 
 import com.plainprog.grandslam_ai.config.TestConfig;
 import com.plainprog.grandslam_ai.entity.account.Account;
-import com.plainprog.grandslam_ai.entity.account.AccountRepository;
-import com.plainprog.grandslam_ai.entity.account_security.AccountSecurity;
-import com.plainprog.grandslam_ai.entity.account_security.AccountSecurityRepository;
-import com.plainprog.grandslam_ai.object.dto.util.OperationOutcome;
-import com.plainprog.grandslam_ai.object.dto.util.OperationResultDTO;
-import com.plainprog.grandslam_ai.object.request_models.auth.CreateAccountRequest;
 import com.plainprog.grandslam_ai.object.request_models.auth.LoginRequest;
-import com.plainprog.grandslam_ai.service.account.AccountService;
 import com.plainprog.grandslam_ai.service.account.helper.TestUserHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,10 +14,6 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.*;
 

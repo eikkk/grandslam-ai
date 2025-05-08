@@ -1,6 +1,6 @@
 package com.plainprog.grandslam_ai.generation;
 
-import com.plainprog.grandslam_ai.config.TestConfig;
+import com.plainprog.grandslam_ai.BaseEndpointTest;
 import com.plainprog.grandslam_ai.entity.account.Account;
 import com.plainprog.grandslam_ai.entity.img_gen.Image;
 import com.plainprog.grandslam_ai.entity.img_gen.ImageRepository;
@@ -15,14 +15,10 @@ import com.plainprog.grandslam_ai.object.response_models.generation.ImgGenRespon
 import com.plainprog.grandslam_ai.service.account.helper.TestUserHelper;
 import com.plainprog.grandslam_ai.service.generation.ImageGenerationService;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -31,10 +27,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@ExtendWith(SpringExtension.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ContextConfiguration(classes = {TestConfig.class})
-public class ImageGenerationTest {
+public class ImageGenerationTest extends BaseEndpointTest {
     @Value("${app.url.base}")
     private String baseUrl;
     @Autowired
@@ -48,41 +41,29 @@ public class ImageGenerationTest {
 
     @Test
     public void imageGenerationEndpointTest() throws Exception {
-        //Given
+        String url = baseUrl + "/api/gen/image";
+        HttpMethod method = HttpMethod.POST;
+        Class<?> responseType = ImgGenResponse.class;
+
+        //Form request
         String negativePrompt = Prompts.negativePrompt(ImgGenModuleId.AESTHETIC);
         ImgGenRequest request = new ImgGenRequest(Prompts.testPrompt , "s", ProviderId.STABLE_DIFFUSION_XL, ImgGenModuleId.AESTHETIC);
         request.setNegativePrompt(negativePrompt);
-        HttpHeaders headers = new HttpHeaders();
-        headers.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-        HttpEntity<ImgGenRequest> entity = new HttpEntity<>(request, headers);
+
         //Test that endpoint is protected by authentication
-        ResponseEntity<ImgGenResponse> responseEntity =
-                restTemplate.postForEntity(baseUrl + "/api/gen/image", entity, ImgGenResponse.class);
-
-        //Request not allowed
-        assertEquals(HttpStatus.FORBIDDEN, responseEntity.getStatusCode());
-
-
-        // Log in the user
-        HttpHeaders headersWithAuth = testUserHelper.initiateSession();
-        assertTrue(headersWithAuth.containsKey("Cookie"));
-
-        // Now we can access the endpoint with our headers
-        headersWithAuth.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-        HttpEntity<ImgGenRequest> entityWithAuth = new HttpEntity<>(request, headersWithAuth);
-        responseEntity =
-                restTemplate.postForEntity(baseUrl + "/api/gen/image", entityWithAuth, ImgGenResponse.class);
-
-        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-
+        testEndpointProtection(url, method, request, responseType);
+        //Test authenticated request
+        ResponseEntity<?> response = testAuthenticatedRequest(url, method, request, responseType);
         //Check that the response is not null and contains the expected data
-        ImgGenResponse response = responseEntity.getBody();
-        assert response != null;
-        imageResultValidation(response);
+        ImgGenResponse responseBody = (ImgGenResponse)response.getBody();
+        assert responseBody != null;
+        imageResultValidation(responseBody);
 }
 
     @Test
     public void imageRegenerationTest() throws Exception {
+        HttpMethod method = HttpMethod.POST;
+        Class<?> responseType = ImgGenResponse.class;
         Account acc = testUserHelper.ensureTestUserExists();
         //Given
         Optional<Image> testImage = imageRepository.findFirstByOwnerAccountId(acc.getId());
@@ -94,113 +75,64 @@ public class ImageGenerationTest {
         assertNotNull(imageOfOtherOwner.get().getNegativePrompt());
         assertNotNull(imageOfOtherOwner.get().getPrompt());
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-        HttpEntity<ImgGenRequest> entity = new HttpEntity<>(headers);
-        //Test that endpoint is protected by authentication
-        ResponseEntity<ImgGenResponse> responseEntity =
-                restTemplate.postForEntity(baseUrl + "/api/gen/image/" + testImage.get().getId() + "/regen", entity, ImgGenResponse.class);
+        String url = baseUrl + "/api/gen/image/" + testImage.get().getId() + "/regen";
 
-        //Request not allowed
-        assertEquals(HttpStatus.FORBIDDEN, responseEntity.getStatusCode());
+        //test that endpoint is protected by authentication
+        testEndpointProtection(url, method, null, responseType);
+        //Test authenticated request
+        ResponseEntity<?> response = testAuthenticatedRequest(url, method, null, responseType);
+        ImgGenResponse responseBody = (ImgGenResponse)response.getBody();
+        assert responseBody != null;
+        imageResultValidation(responseBody);
 
-
-        // Log in the user
-        HttpHeaders headersWithAuth = testUserHelper.initiateSession();
-        assertTrue(headersWithAuth.containsKey("Cookie"));
-
-        // Now we can access the endpoint with our headers
-        headersWithAuth.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-        HttpEntity<ImgGenRequest> entityWithAuth = new HttpEntity<>(headersWithAuth);
-        responseEntity =
-                restTemplate.postForEntity(baseUrl + "/api/gen/image/" + testImage.get().getId() + "/regen", entityWithAuth, ImgGenResponse.class);
-
-        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-
-        //Check that the response is not null and contains the expected data
-        ImgGenResponse response = responseEntity.getBody();
-        assert response != null;
-        imageResultValidation(response);
-        var imageDB = imageRepository.findById(response.getImageId()).orElse(null);
+        var imageDB = imageRepository.findById(responseBody.getImageId()).orElse(null);
         assertNotNull(imageDB, "Image should exist in the database");
         assertEquals(imageDB.getOwnerAccount().getId(), testUserHelper.ensureTestUserExists().getId(), "Wrong image owner");
 
         //Try to request regeneration of image of other owner
-        ResponseEntity<ImgGenResponse> responseEntityOtherOwner = null;
-        boolean isException = false;
-        try {
-            responseEntityOtherOwner =
-                    restTemplate.postForEntity(baseUrl + "/api/gen/image/" + imageOfOtherOwner.get().getId() + "/regen", entityWithAuth, ImgGenResponse.class);
-        } catch (Exception ignored) {
-            isException = true;
-        }
-        //assert that response is not successful
-        assertTrue(isException);
-        assertNull(responseEntityOtherOwner);
+        String urlOtherOwner = baseUrl + "/api/gen/image/" + imageOfOtherOwner.get().getId() + "/regen";
+        testForPositiveExpectedError(urlOtherOwner, method, null, responseType);
     }
 
     @Test
     public void seedGenerationTest() throws Exception {
+        String urlTemplate = baseUrl + "/api/gen/image/%d/seed-regen";
+        HttpMethod method = HttpMethod.POST;
+        Class<?> responseType = ImgGenResponse.class;
+
         Account acc = testUserHelper.ensureTestUserExists();
-        //Given
         Optional<Image> testImage = imageRepository.findFirstByOwnerAccountId(acc.getId());
         Optional<Image> imageOfOtherOwner = imageRepository.findFirstByOwnerAccountIdNot(acc.getId());
 
-        assertTrue(testImage.isPresent());
-        assertTrue(imageOfOtherOwner.isPresent());
-        assertNotNull(testImage.get().getPrompt());
-        assertNotNull(imageOfOtherOwner.get().getNegativePrompt());
-        assertNotNull(imageOfOtherOwner.get().getPrompt());
+        assertTrue(testImage.isPresent(), "Test image not found");
+        assertTrue(imageOfOtherOwner.isPresent(), "Image of other owner not found");
+        assertNotNull(testImage.get().getPrompt(), "Test image prompt is null");
+        assertNotNull(imageOfOtherOwner.get().getNegativePrompt(), "Other owner's image negative prompt is null");
+        assertNotNull(imageOfOtherOwner.get().getPrompt(), "Other owner's image prompt is null");
 
-        //Request
+        // Form request
         SeedRegenRequest request = new SeedRegenRequest(testImage.get().getPrompt());
-        HttpHeaders headers = new HttpHeaders();
-        headers.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-        HttpEntity<SeedRegenRequest> entity = new HttpEntity<>(request, headers);
 
+        // Test that endpoint is protected by authentication
+        String url = String.format(urlTemplate, testImage.get().getId());
+        testEndpointProtection(url, method, request, responseType);
 
-        //Test that endpoint is protected by authentication
-        ResponseEntity<ImgGenResponse> responseEntity =
-                restTemplate.postForEntity(baseUrl + "/api/gen/image/" + testImage.get().getId() + "/seed-regen", entity, ImgGenResponse.class);
+        // Test authenticated request
+        ResponseEntity<?> response = testAuthenticatedRequest(url, method, request, responseType);
+        ImgGenResponse responseBody = (ImgGenResponse) response.getBody();
+        assertNotNull(responseBody, "Response body is null");
+        imageResultValidation(responseBody);
 
-        //Request not allowed
-        assertEquals(HttpStatus.FORBIDDEN, responseEntity.getStatusCode());
-
-
-        // Log in the user
-        HttpHeaders headersWithAuth = testUserHelper.initiateSession();
-        assertTrue(headersWithAuth.containsKey("Cookie"));
-
-        // Now we can access the endpoint with our headers
-        headersWithAuth.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-        HttpEntity<SeedRegenRequest> entityWithAuth = new HttpEntity<>(request, headersWithAuth);
-        responseEntity =
-                restTemplate.postForEntity(baseUrl + "/api/gen/image/" + testImage.get().getId() + "/seed-regen", entityWithAuth, ImgGenResponse.class);
-
-        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-
-        //Check that the response is not null and contains the expected data
-        ImgGenResponse response = responseEntity.getBody();
-        assert response != null;
-        imageResultValidation(response);
-        Image imageDB = imageRepository.findById(response.getImageId()).orElse(null);
+        // Validate image in the database
+        Image imageDB = imageRepository.findById(responseBody.getImageId()).orElse(null);
         assertNotNull(imageDB, "Image should exist in the database");
-        assertEquals(testImage.get().getSeed(), imageDB.getSeed(), "Seed should be the same as in the original image");
-        assertEquals(imageDB.getOwnerAccount().getId(), testUserHelper.ensureTestUserExists().getId(), "Wrong image owner");
+        assertEquals(testImage.get().getSeed(), imageDB.getSeed(), "Seed should match the original image");
+        assertEquals(imageDB.getOwnerAccount().getId(), acc.getId(), "Wrong image owner");
 
-
-        //Try to request regeneration of image of other owner
-        ResponseEntity<ImgGenResponse> responseEntityOtherOwner = null;
-        boolean isException = false;
-        try {
-            responseEntityOtherOwner =
-                    restTemplate.postForEntity(baseUrl + "/api/gen/image/" + imageOfOtherOwner.get().getId() + "/seed-regen", entityWithAuth, ImgGenResponse.class);
-        } catch (Exception ignored) {
-            isException = true;
-        }
-        //assert that response is not successful
-        assertTrue(isException);
-        assertNull(responseEntityOtherOwner);
+        // Try to request regeneration of image of another owner
+        String urlOtherOwner = String.format(urlTemplate, imageOfOtherOwner.get().getId());
+        SeedRegenRequest requestOtherOwner = new SeedRegenRequest(imageOfOtherOwner.get().getPrompt());
+        testForPositiveExpectedError(urlOtherOwner, method, requestOtherOwner, responseType);
     }
     private void imageResultValidation(ImgGenResponse response) throws Exception {
         assertFalse(response.getImage().getFullSize().isEmpty());

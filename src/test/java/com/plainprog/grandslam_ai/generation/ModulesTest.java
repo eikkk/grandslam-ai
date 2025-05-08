@@ -1,5 +1,6 @@
 package com.plainprog.grandslam_ai.generation;
 
+import com.plainprog.grandslam_ai.BaseEndpointTest;
 import com.plainprog.grandslam_ai.config.TestConfig;
 import com.plainprog.grandslam_ai.object.request_models.generation.ImgGenRequest;
 import com.plainprog.grandslam_ai.object.response_models.generation.ImgGenModulesResponse;
@@ -17,10 +18,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@ExtendWith(SpringExtension.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ContextConfiguration(classes = {TestConfig.class})
-public class ModulesTest {
+public class ModulesTest extends BaseEndpointTest {
     @Value("${app.url.base}")
     private String baseUrl;
     @Autowired
@@ -29,29 +27,27 @@ public class ModulesTest {
     private TestUserHelper testUserHelper;
 
     @Test
-    public void modulesTest() throws Exception {
+    public void healthCheckTest() throws Exception {
         // When
         ResponseEntity<ModulesHealthCheckResponse> responseEntity =
                 restTemplate.postForEntity(baseUrl + "/api/gen/modules/health_check", null, ModulesHealthCheckResponse.class);
-
         // Request succeeded
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+    }
+    @Test
+    public void modulesEndpointTest() throws Exception {
+        String url = baseUrl + "/api/gen/modules";
+        HttpMethod method = HttpMethod.GET;
+        Class<?> responseType = ImgGenModulesResponse.class;
+        // Test if the endpoint is protected by authentication
+        testEndpointProtection(url, method, null, responseType);
+        // Test if the endpoint returns a 200 OK status
+        ResponseEntity<?> response = testAuthenticatedRequest(url, method, null, responseType);
 
-        // Make request to modules endpoint
-        HttpHeaders headersWithAuth = testUserHelper.initiateSession();
-        assertTrue(headersWithAuth.containsKey("Cookie"));
-
-        // Now we can access the endpoint with our headers
-        HttpEntity<ImgGenRequest> entityWithAuth = new HttpEntity<>(headersWithAuth);
-        ResponseEntity<ImgGenModulesResponse> responseEntityModules =
-                restTemplate.exchange(baseUrl + "/api/gen/modules", HttpMethod.GET, entityWithAuth, ImgGenModulesResponse.class);
-
-        // Request succeeded
-        assertEquals(HttpStatus.OK, responseEntityModules.getStatusCode());
-        ImgGenModulesResponse response = responseEntityModules.getBody();
-        assertNotNull(response);
-        assertNotNull(response.getGroups());
-        assertFalse(response.getGroups().isEmpty());
+        ImgGenModulesResponse body = (ImgGenModulesResponse)response.getBody();
+        assertNotNull(body);
+        assertNotNull(body.getGroups());
+        assertFalse(body.getGroups().isEmpty());
     }
 
 }

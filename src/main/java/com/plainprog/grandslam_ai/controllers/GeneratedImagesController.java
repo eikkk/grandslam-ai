@@ -1,9 +1,12 @@
 package com.plainprog.grandslam_ai.controllers;
 
 import com.plainprog.grandslam_ai.entity.account.Account;
+import com.plainprog.grandslam_ai.object.dto.util.OperationOutcome;
+import com.plainprog.grandslam_ai.object.dto.util.OperationResultDTO;
 import com.plainprog.grandslam_ai.object.request_models.generation.ImgGenRequest;
 import com.plainprog.grandslam_ai.object.request_models.generation.SeedRegenRequest;
 import com.plainprog.grandslam_ai.object.response_models.generation.ImgGenModulesResponse;
+import com.plainprog.grandslam_ai.object.response_models.generation.ImgGenResponse;
 import com.plainprog.grandslam_ai.object.response_models.generation.ModulesHealthCheckResponse;
 import com.plainprog.grandslam_ai.service.auth.helper.SessionDataHolder;
 import com.plainprog.grandslam_ai.service.generation.GenerationModulesService;
@@ -27,13 +30,18 @@ public class GeneratedImagesController {
      * [Covered with]: ImageGenerationTest#imageGenerationEndpointTest()
      */
     @PostMapping("/image")
-    public ResponseEntity<?> generateImage(@RequestBody ImgGenRequest request) {
+    public ResponseEntity<ImgGenResponse> generateImage(@RequestBody ImgGenRequest request) {
         Account account = SessionDataHolder.getPayload().getAccount();
         try {
-            var result = imageGenerationService.generateImage(request, account, false, 0, 0);
+            ImgGenResponse result = imageGenerationService.generateImage(request, account, false, 0, 0);
+            OperationResultDTO operationResultDTO = new OperationResultDTO(OperationOutcome.SUCCESS, "Image generated successfully", null);
+            result.setOperationResult(operationResultDTO);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error generating image: " + e.getMessage());
+            OperationResultDTO operationResultDTO = new OperationResultDTO(OperationOutcome.FAILURE, "Error generating image", e.getMessage());
+            ImgGenResponse result = new ImgGenResponse();
+            result.setOperationResult(operationResultDTO);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
         }
     }
     /**
@@ -41,13 +49,17 @@ public class GeneratedImagesController {
      * [Covered with]: ImageGenerationTest#imageRegenerationTest()
      */
     @PostMapping("/image/{imageId}/regen")
-    public ResponseEntity<?> regenerateImage(@PathVariable Long imageId) {
+    public ResponseEntity<ImgGenResponse> regenerateImage(@PathVariable Long imageId) {
         Account account = SessionDataHolder.getPayload().getAccount();
         try {
-            var result = imageGenerationService.regenerateImage(imageId, account);
-            return ResponseEntity.ok(result);
+            ImgGenResponse response = imageGenerationService.regenerateImage(imageId, account);
+            OperationResultDTO operationResultDTO = new OperationResultDTO(OperationOutcome.SUCCESS, "Image regenerated successfully", null);
+            response.setOperationResult(operationResultDTO);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error generating image: " + e.getMessage());
+            OperationResultDTO operationResultDTO = new OperationResultDTO(OperationOutcome.FAILURE, "Error regenerating image", e.getMessage());
+            ImgGenResponse result = new ImgGenResponse();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
         }
     }
     /**
@@ -55,13 +67,18 @@ public class GeneratedImagesController {
      * [Covered with]: ImageGenerationTest#seedGenerationTest()
      */
     @PostMapping("/image/{imageId}/seed-regen")
-    public ResponseEntity<?> regenerateImageWithSeed(@PathVariable Long imageId, @RequestBody SeedRegenRequest request) {
+    public ResponseEntity<ImgGenResponse> regenerateImageWithSeed(@PathVariable Long imageId, @RequestBody SeedRegenRequest request) {
         Account account = SessionDataHolder.getPayload().getAccount();
         try {
-            var result = imageGenerationService.seedRegenerateImage(imageId, account, request.getPrompt());
+            ImgGenResponse result = imageGenerationService.seedRegenerateImage(imageId, account, request.getPrompt());
+            OperationResultDTO operationResultDTO = new OperationResultDTO(OperationOutcome.SUCCESS, "Image regenerated successfully", null);
+            result.setOperationResult(operationResultDTO);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error generating image: " + e.getMessage());
+            OperationResultDTO operationResultDTO = new OperationResultDTO(OperationOutcome.FAILURE, "Error regenerating image", e.getMessage());
+            ImgGenResponse result = new ImgGenResponse();
+            result.setOperationResult(operationResultDTO);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
         }
     }
     /**

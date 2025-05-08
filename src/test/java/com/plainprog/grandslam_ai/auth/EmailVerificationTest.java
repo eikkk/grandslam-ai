@@ -1,26 +1,19 @@
 package com.plainprog.grandslam_ai.auth;
 
-import com.plainprog.grandslam_ai.config.TestConfig;
+import com.plainprog.grandslam_ai.BaseEndpointTest;
 import com.plainprog.grandslam_ai.entity.account.Account;
 import com.plainprog.grandslam_ai.entity.account.AccountRepository;
 import com.plainprog.grandslam_ai.entity.account_security.AccountSecurity;
 import com.plainprog.grandslam_ai.entity.account_security.AccountSecurityRepository;
-import com.plainprog.grandslam_ai.object.dto.util.OperationOutcome;
 import com.plainprog.grandslam_ai.object.dto.util.OperationResultDTO;
-import com.plainprog.grandslam_ai.object.request_models.auth.CreateAccountRequest;
-import com.plainprog.grandslam_ai.object.request_models.auth.LoginRequest;
 import com.plainprog.grandslam_ai.service.account.AccountService;
 import com.plainprog.grandslam_ai.service.account.helper.TestUserHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -28,10 +21,7 @@ import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@ExtendWith(SpringExtension.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ContextConfiguration(classes = {TestConfig.class})
-public class EmailVerificationTest {
+public class EmailVerificationTest extends BaseEndpointTest {
 
     @Value("${app.url.base}")
     private String baseUrl;
@@ -59,25 +49,14 @@ public class EmailVerificationTest {
     public void testEmailVerification() throws Exception {
         Account account = null;
         try{
-            // First we have to verify that not logged-in user can't access the endpoint
-            // When
-            ResponseEntity<OperationResultDTO> responseEntity =
-                    restTemplate.postForEntity(baseUrl + "/api/auth/account/email-verification", null, OperationResultDTO.class);
+            String url = baseUrl + "/api/auth/account/email-verification";
+            HttpMethod method = HttpMethod.POST;
+            Class<?> responseType = OperationResultDTO.class;
 
-            // Request fails
-            assertNotEquals(HttpStatus.OK, responseEntity.getStatusCode());
-
-            // Now let's log in the user
-            HttpHeaders headers = testUserHelper.initiateSession();
-            assertTrue(headers.containsKey("Cookie"));
-
-            // Now we can access the endpoint with our headers
-            HttpEntity<OperationResultDTO> entity = new HttpEntity<>(headers);
-            responseEntity =
-                    restTemplate.postForEntity(baseUrl + "/api/auth/account/email-verification", entity, OperationResultDTO.class);
-
-            assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-
+            // Test if the endpoint is protected by authentication
+            testEndpointProtection(url, method, null, responseType);
+            // Test if the endpoint returns a 200 OK status
+            testAuthenticatedRequest(url, method, null, responseType);
 
             account = accountService.getAccountByEmail(testEmail);
             // Email verification token gets generated
