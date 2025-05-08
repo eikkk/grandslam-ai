@@ -36,7 +36,7 @@ public abstract class BaseEndpointTest {
 
         ResponseEntity<?> response = restTemplate.exchange(url, method, entity, responseType);
 
-        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode(), "Endpoint is not protected by authentication");
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode(), "Endpoint is not protected by authentication");
     }
 
     /**

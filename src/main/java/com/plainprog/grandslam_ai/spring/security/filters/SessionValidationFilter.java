@@ -53,6 +53,9 @@ public class SessionValidationFilter extends OncePerRequestFilter {
                         new UsernamePasswordAuthenticationToken(sessionData.getUser().getUsername(), null, authorities);
 
                 SecurityContextHolder.getContext().setAuthentication(auth);
+            } else {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
             }
 
             filterChain.doFilter(request, response);
