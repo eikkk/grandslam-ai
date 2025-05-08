@@ -9,10 +9,7 @@ import com.plainprog.grandslam_ai.service.gallery.GalleryService;
 import com.plainprog.grandslam_ai.service.incubator.IncubatorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/incubator")
@@ -48,6 +45,19 @@ public class IncubatorController {
         Account account = SessionDataHolder.getPayload().getAccount();
         try {
             galleryService.promoteIncubatorImages(imageIds.getIds(), account);
+            return ResponseEntity.ok(new OperationResultDTO(OperationOutcome.SUCCESS, "Incubator images promoted successfully", null));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(new OperationResultDTO(OperationOutcome.FAILURE, "Failed to delete", e.getMessage()));
+        }
+    }
+    /**
+     * Endpoint for setting shortlist flag to incubator images
+     * [Covered with]: IncubatorTests#testShortlisting()
+     */
+    @PostMapping("/batch/shortlist/{value}")
+    public ResponseEntity<OperationResultDTO> shortlistIncubatorImages(@RequestBody BatchOperationOnLongIds imageIds, @PathVariable("value") Boolean value) {
+        try {
+            incubatorService.shortlistIncubatorImages(imageIds.getIds(), value);
             return ResponseEntity.ok(new OperationResultDTO(OperationOutcome.SUCCESS, "Incubator images promoted successfully", null));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(new OperationResultDTO(OperationOutcome.FAILURE, "Failed to delete", e.getMessage()));

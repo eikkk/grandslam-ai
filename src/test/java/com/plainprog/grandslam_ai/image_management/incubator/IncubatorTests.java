@@ -180,4 +180,45 @@ public class IncubatorTests {
            assertNull(entry.getGroup());
         }
     }
+
+    @Test
+    void testShortlisting(){
+        assertTrue(testEntries.size() > 1, "Not enough entries to test shortlisting");
+        List<Long> incubatorEntryIds = testEntries.stream()
+                .map(entry -> entry.getImage().getId())
+                .toList();
+        List<Image> images = testEntries.stream()
+                .map(IncubatorEntry::getImage)
+                .toList();
+        List<Long> imageIds = images.stream()
+                .map(Image::getId)
+                .toList();
+
+        HttpHeaders headersWithAuth = testUserHelper.initiateSession();
+        BatchOperationOnLongIds request = new BatchOperationOnLongIds(imageIds);
+        headersWithAuth.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
+        assertTrue(headersWithAuth.containsKey("Cookie"));
+
+        HttpEntity<BatchOperationOnLongIds> entityWithAuth = new HttpEntity<>(request, headersWithAuth);
+        ResponseEntity<OperationResultDTO> responseEntity =
+                restTemplate.postForEntity(baseUrl + "/api/incubator/batch/shortlist/true", entityWithAuth, OperationResultDTO.class);
+
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+
+        //verify that incubatorEntries are shortlisted
+        List<IncubatorEntry> incubatorEntries = incubatorEntryRepository.findAllByImageIdIn(imageIds);
+        for (IncubatorEntry entry : incubatorEntries) {
+            assertTrue(entry.isShortlisted(), "Incubator entry not shortlisted: " + entry.getId());
+        }
+
+        //now test removing shortlist
+        responseEntity =
+                restTemplate.postForEntity(baseUrl + "/api/incubator/batch/shortlist/false", entityWithAuth, OperationResultDTO.class);
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        //verify that incubatorEntries are not shortlisted
+        incubatorEntries = incubatorEntryRepository.findAllByImageIdIn(imageIds);
+        for (IncubatorEntry entry : incubatorEntries) {
+            assertFalse(entry.isShortlisted(), "Incubator entry not shortlisted: " + entry.getId());
+        }
+    }
 }

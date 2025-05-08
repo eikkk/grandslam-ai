@@ -46,4 +46,16 @@ public class IncubatorService {
         //delete images from gcp
         gcpStorageService.deleteImages(allUrls);
     }
+
+    @Transactional
+    public void shortlistIncubatorImages(List<Long> imageIds, Boolean value) {
+        //iterate through imageIds and handle each delete
+        List<IncubatorEntry> incubatorEntries = incubatorEntryRepository.findAllByImageIdIn(imageIds);
+        //set all entries to shortlisted
+        for (IncubatorEntry entry : incubatorEntries) {
+            entry.setShortlisted(value);
+        }
+        //save all entries to db
+        incubatorEntryRepository.saveAll(incubatorEntries);
+    }
 }
