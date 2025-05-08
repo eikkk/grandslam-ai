@@ -8,5 +8,5 @@ public interface IncubatorEntryRepository extends JpaRepository<IncubatorEntry, 
     IncubatorEntry findByImageId(Long imageId);
     void deleteAllByImageIdIn(Iterable<Long> imageIds);
     List<IncubatorEntry> findAllByImageIdIn(Iterable<Long> imageIds);
-    List<IncubatorEntry> findByImageOwnerAccountId(Long ownerAccountId);
+    List<IncubatorEntry> findAllByImageOwnerAccountId(Long ownerAccountId);
 }

@@ -18,6 +18,7 @@ import com.plainprog.grandslam_ai.object.request_models.auth.LoginRequest;
 import com.plainprog.grandslam_ai.object.request_models.generation.SeedRegenRequest;
 import com.plainprog.grandslam_ai.object.request_models.other.BatchOperationOnLongIds;
 import com.plainprog.grandslam_ai.object.response_models.generation.ImgGenResponse;
+import com.plainprog.grandslam_ai.object.response_models.image_management.incubator.IncubatorResponseModel;
 import com.plainprog.grandslam_ai.service.account.AccountService;
 import com.plainprog.grandslam_ai.service.account.helper.TestUserHelper;
 import com.plainprog.grandslam_ai.service.gcp.GCPStorageService;
@@ -70,7 +71,7 @@ public class IncubatorTests {
     public void ensureEntriesExist() throws Exception {
         //Ensures there are at least two incubator images of test user
         Account testAcc = testUserHelper.ensureTestUserExists();
-        List<IncubatorEntry> entries = incubatorEntryRepository.findByImageOwnerAccountId(testAcc.getId());
+        List<IncubatorEntry> entries = incubatorEntryRepository.findAllByImageOwnerAccountId(testAcc.getId());
         if (entries.size() < 2) {
             // Create two test entries
             List<Long> imageIds = new ArrayList<>();
@@ -220,5 +221,36 @@ public class IncubatorTests {
         for (IncubatorEntry entry : incubatorEntries) {
             assertFalse(entry.isShortlisted(), "Incubator entry not shortlisted: " + entry.getId());
         }
+    }
+
+    @Test
+    void testIncubatorGetAll() throws Exception {
+        //make unauthenticated get request
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        //Test that endpoint is protected by authentication
+        ResponseEntity<IncubatorResponseModel> responseEntity =
+                restTemplate.exchange(baseUrl + "/api/incubator/all", HttpMethod.GET, entity, IncubatorResponseModel.class);
+
+        //Request not allowed
+        assertEquals(HttpStatus.FORBIDDEN, responseEntity.getStatusCode());
+
+        // Now let's log in the user
+        HttpHeaders headersWithAuth = testUserHelper.initiateSession();
+        assertTrue(headersWithAuth.containsKey("Cookie"));
+
+        // Now we can access the endpoint with our headers
+        HttpEntity<String> entityWithAuth = new HttpEntity<>(headersWithAuth);
+        responseEntity =
+                restTemplate.exchange(baseUrl + "/api/incubator/all", HttpMethod.GET, entityWithAuth, IncubatorResponseModel.class);
+
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        assertTrue(responseEntity.hasBody(), "Response body is empty");
+        IncubatorResponseModel responseBody = responseEntity.getBody();
+        assertNotNull(responseBody, "Response body is null");
+        assertEquals(OperationOutcome.SUCCESS, responseBody.getOperationResult().getOperationOutcome(), "Operation failed");
+        assertFalse(responseBody.getEntries().isEmpty(), "No incubator entries found");
     }
 }

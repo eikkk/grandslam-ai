@@ -5,6 +5,9 @@ import com.plainprog.grandslam_ai.entity.img_gen.Image;
 import com.plainprog.grandslam_ai.entity.img_gen.ImageRepository;
 import com.plainprog.grandslam_ai.entity.img_management.IncubatorEntry;
 import com.plainprog.grandslam_ai.entity.img_management.IncubatorEntryRepository;
+import com.plainprog.grandslam_ai.object.mappers.IncubatorMappers;
+import com.plainprog.grandslam_ai.object.response_models.image_management.incubator.IncubatorResponseItem;
+import com.plainprog.grandslam_ai.object.response_models.image_management.incubator.IncubatorResponseModel;
 import com.plainprog.grandslam_ai.service.gcp.GCPStorageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -57,5 +60,14 @@ public class IncubatorService {
         }
         //save all entries to db
         incubatorEntryRepository.saveAll(incubatorEntries);
+    }
+
+    public IncubatorResponseModel getIncubatorEntries(Account account) {
+        // Get all incubator entries for the given account
+        List<IncubatorEntry> incubatorEntries = incubatorEntryRepository.findAllByImageOwnerAccountId(account.getId());
+        // Map to response model
+        return new IncubatorResponseModel(incubatorEntries.stream()
+                .map(IncubatorMappers::mapToResponseItem)
+                .toList());
     }
 }
