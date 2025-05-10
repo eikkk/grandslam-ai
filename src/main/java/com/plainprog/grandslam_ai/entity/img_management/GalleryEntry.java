@@ -1,13 +1,14 @@
 package com.plainprog.grandslam_ai.entity.img_management;
 
 import com.plainprog.grandslam_ai.entity.img_gen.Image;
+import com.plainprog.grandslam_ai.helper.sorting.Sortable;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.time.Instant;
 
 @Entity
 @Table(name = "gallery_entry")
-public class GalleryEntry implements Serializable {
+public class GalleryEntry implements Serializable, Sortable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,7 +33,7 @@ public class GalleryEntry implements Serializable {
     private boolean hidden = false;
 
     @Column
-    private Integer position;
+    private Long position;
 
     @Column(nullable = false)
     private boolean shortlisted = false;
@@ -43,7 +44,7 @@ public class GalleryEntry implements Serializable {
     // Constructors
     public GalleryEntry() {}
 
-    public GalleryEntry(Image image, GalleryGroup group, boolean hidden, Integer position, boolean shortlisted) {
+    public GalleryEntry(Image image, GalleryGroup group, boolean hidden, Long position, boolean shortlisted) {
         this.image = image;
         this.group = group;
         this.hidden = hidden;
@@ -81,11 +82,11 @@ public class GalleryEntry implements Serializable {
         this.hidden = hidden;
     }
 
-    public Integer getPosition() {
+    public Long getPosition() {
         return position;
     }
 
-    public void setPosition(Integer position) {
+    public void setPosition(Long position) {
         this.position = position;
     }
 

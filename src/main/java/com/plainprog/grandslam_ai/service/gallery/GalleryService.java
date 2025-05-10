@@ -33,26 +33,13 @@ public class GalleryService {
                 throw new IllegalArgumentException("Not allowed");
             }
         }
+        //ungrouped gallery entries can't be ordered, that's we set position to 0
         var galleryEntries = images.stream()
-                .map(image -> new GalleryEntry(image, null, false, 0, false))
+                .map(image -> new GalleryEntry(image, null, false, 0L, false))
                 .toList();
         //save gallery entries to db
         galleryEntryRepository.saveAll(galleryEntries);
         //delete incubator entries from db
         incubatorEntryRepository.deleteAllByImageIdIn(imageIds);
-    }
-
-    public void rebalanceIndexes(Integer groupId, Long accountId) {
-        // Get all entries for the given groupId and accountId
-        List<GalleryEntry> entries = galleryEntryRepository.findAllByGroupIdAndImageOwnerAccountId(groupId, accountId);
-
-        // Rebalance indexes
-        int distance = 1000;
-        for (int i = 0; i < entries.size(); i++) {
-            entries.get(i).setPosition(i + distance);
-        }
-
-        // Save all entries back to the database
-        galleryEntryRepository.saveAll(entries);
     }
 }

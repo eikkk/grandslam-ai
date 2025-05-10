@@ -1,5 +1,6 @@
 package com.plainprog.grandslam_ai.entity.img_management;
 
+import com.plainprog.grandslam_ai.helper.sorting.Sortable;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.time.Instant;
@@ -8,7 +9,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "gallery_group")
-public class GalleryGroup implements Serializable {
+public class GalleryGroup implements Serializable, Sortable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -18,7 +19,7 @@ public class GalleryGroup implements Serializable {
     private String name;
 
     @Column(nullable = false)
-    private Integer position;
+    private Long position;
 
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
@@ -29,7 +30,7 @@ public class GalleryGroup implements Serializable {
     // Constructors
     public GalleryGroup() {}
 
-    public GalleryGroup(String name, Integer position) {
+    public GalleryGroup(String name, Long position) {
         this.name = name;
         this.position = position;
     }
@@ -48,11 +49,11 @@ public class GalleryGroup implements Serializable {
         this.name = name;
     }
 
-    public Integer getPosition() {
+    public Long getPosition() {
         return position;
     }
 
-    public void setPosition(Integer position) {
+    public void setPosition(Long position) {
         this.position = position;
     }
 

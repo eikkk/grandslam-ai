@@ -1,6 +1,7 @@
 package com.plainprog.grandslam_ai.entity.img_management;
 
 import com.plainprog.grandslam_ai.entity.img_gen.Image;
+import com.plainprog.grandslam_ai.helper.sorting.Sortable;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
@@ -8,7 +9,7 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "spotlight_entry")
-public class SpotlightEntry implements Serializable {
+public class SpotlightEntry implements Serializable, Sortable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,7 +20,7 @@ public class SpotlightEntry implements Serializable {
     private Image image;
 
     @Column(nullable = false)
-    private Integer position;
+    private Long position;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -27,7 +28,7 @@ public class SpotlightEntry implements Serializable {
     // Constructors
     public SpotlightEntry() {}
 
-    public SpotlightEntry(Image image, Integer position, Instant createdAt) {
+    public SpotlightEntry(Image image, Long position, Instant createdAt) {
         this.image = image;
         this.position = position;
         this.createdAt = createdAt;
@@ -52,11 +53,11 @@ public class SpotlightEntry implements Serializable {
         this.image = image;
     }
 
-    public Integer getPosition() {
+    public Long getPosition() {
         return position;
     }
 
-    public void setPosition(Integer position) {
+    public void setPosition(Long position) {
         this.position = position;
     }
 
