@@ -1,5 +1,6 @@
 package com.plainprog.grandslam_ai.entity.img_management;
 
+import com.plainprog.grandslam_ai.entity.account.Account;
 import com.plainprog.grandslam_ai.helper.sorting.Sortable;
 import jakarta.persistence.*;
 import java.io.Serializable;
@@ -27,12 +28,17 @@ public class GalleryGroup implements Serializable, Sortable {
     @OneToMany(mappedBy = "group")
     private List<GalleryEntry> entries = new ArrayList<>();
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "account_id", nullable = false)
+    private Account account;
+
     // Constructors
     public GalleryGroup() {}
 
-    public GalleryGroup(String name, Long position) {
+    public GalleryGroup(String name, Long position, Account account) {
         this.name = name;
         this.position = position;
+        this.account = account;
     }
 
     // Getters and Setters
@@ -77,6 +83,14 @@ public class GalleryGroup implements Serializable, Sortable {
     public void removeEntry(GalleryEntry entry) {
         entries.remove(entry);
         entry.setGroup(null);
+    }
+
+    public Account getAccount() {
+        return account;
+    }
+
+    public void setAccount(Account account) {
+        this.account = account;
     }
 
     // Lifecycle hook to set created_at automatically

@@ -2,10 +2,10 @@ package com.plainprog.grandslam_ai.service.gallery;
 
 import com.plainprog.grandslam_ai.entity.account.Account;
 import com.plainprog.grandslam_ai.entity.img_gen.Image;
-import com.plainprog.grandslam_ai.entity.img_management.GalleryEntry;
-import com.plainprog.grandslam_ai.entity.img_management.GalleryEntryRepository;
-import com.plainprog.grandslam_ai.entity.img_management.IncubatorEntry;
-import com.plainprog.grandslam_ai.entity.img_management.IncubatorEntryRepository;
+import com.plainprog.grandslam_ai.entity.img_management.*;
+import com.plainprog.grandslam_ai.helper.sorting.SortingService;
+import com.plainprog.grandslam_ai.object.request_models.gallery.CreateGalleryGroupRequest;
+import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +18,8 @@ public class GalleryService {
     private GalleryEntryRepository galleryEntryRepository;
     @Autowired
     private IncubatorEntryRepository incubatorEntryRepository;
+    @Autowired
+    private GalleryGroupRepository galleryGroupRepository;
 
 
     @Transactional
@@ -41,5 +43,15 @@ public class GalleryService {
         galleryEntryRepository.saveAll(galleryEntries);
         //delete incubator entries from db
         incubatorEntryRepository.deleteAllByImageIdIn(imageIds);
+    }
+
+    @Transactional
+    public GalleryGroup createGroup(CreateGalleryGroupRequest request, Account account) {
+        //fetch group with the smallest position
+        GalleryGroup leastPositionGroup = galleryGroupRepository.findFirstByOrderByPositionAsc();
+        long position = leastPositionGroup != null ? leastPositionGroup.getPosition() - SortingService.GAP : SortingService.GAP;
+
+        GalleryGroup newGroup = new GalleryGroup(request.getName(), position, account);
+        return galleryGroupRepository.save(newGroup);
     }
 }

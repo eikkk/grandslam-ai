@@ -31,8 +31,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class IncubatorTests extends BaseEndpointTest {
 
-    @Value("${app.url.base}")
-    private String baseUrl;
     @Value("${app.test.account.email}")
     private String testEmail;
     @Autowired

@@ -19,8 +19,6 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ModulesTest extends BaseEndpointTest {
-    @Value("${app.url.base}")
-    private String baseUrl;
     @Autowired
     private TestRestTemplate restTemplate;
     @Autowired

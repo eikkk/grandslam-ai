@@ -28,8 +28,6 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ImageGenerationTest extends BaseEndpointTest {
-    @Value("${app.url.base}")
-    private String baseUrl;
     @Autowired
     private TestRestTemplate restTemplate;
     @Autowired

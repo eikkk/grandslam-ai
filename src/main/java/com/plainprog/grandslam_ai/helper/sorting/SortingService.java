@@ -6,7 +6,7 @@ import java.util.List;
 @Service
 public class SortingService {
 
-    private static final long GAP = 1000;
+    public static final long GAP = 1000;
 
     /**
      * Attempts to set the position of an item in a list based on its neighbors.

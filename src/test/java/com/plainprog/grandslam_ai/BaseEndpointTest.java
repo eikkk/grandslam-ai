@@ -5,6 +5,7 @@ import com.plainprog.grandslam_ai.config.TestConfig;
 import com.plainprog.grandslam_ai.service.account.helper.TestUserHelper;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
@@ -18,6 +19,8 @@ import static org.junit.jupiter.api.Assertions.*;
 public abstract class BaseEndpointTest {
     @Autowired
     private TestUserHelper testUserHelper;
+    @Value("${app.url.base}")
+    protected String baseUrl;
 
     @Autowired
     protected TestRestTemplate restTemplate;
