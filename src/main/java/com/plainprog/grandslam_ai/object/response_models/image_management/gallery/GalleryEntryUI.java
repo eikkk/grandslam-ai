@@ -10,19 +10,21 @@ public class GalleryEntryUI {
     private long position;
     private Instant hiddenAt;
     private boolean shortlisted;
+    private boolean spotlighted;
     private ImageDTO image;
 
     // Constructors
     public GalleryEntryUI() {}
 
     public GalleryEntryUI(Long entryId, long position, Instant hiddenAt, boolean shortlisted,
-                          Long imageId, ImageDTO image) {
+                          Long imageId, ImageDTO image, boolean spotlighted) {
         this.entryId = entryId;
         this.position = position;
         this.hiddenAt = hiddenAt;
         this.shortlisted = shortlisted;
         this.imageId = imageId;
         this.image = image;
+        this.spotlighted = spotlighted;
     }
 
     // Getters and setters
@@ -70,5 +72,11 @@ public class GalleryEntryUI {
     }
     public void setImage(ImageDTO image) {
         this.image = image;
+    }
+    public boolean isSpotlighted() {
+        return spotlighted;
+    }
+    public void setSpotlighted(boolean spotlighted) {
+        this.spotlighted = spotlighted;
     }
 }

@@ -15,9 +15,8 @@ public class SpotlightEntry implements Serializable, Sortable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "image_id", nullable = false)
-    private Image image;
+    @Column(name = "image_id", nullable = false)
+    private Long imageId;
 
     @Column(nullable = false)
     private Long position;
@@ -28,8 +27,8 @@ public class SpotlightEntry implements Serializable, Sortable {
     // Constructors
     public SpotlightEntry() {}
 
-    public SpotlightEntry(Image image, Long position, Instant createdAt) {
-        this.image = image;
+    public SpotlightEntry(Long imageId, Long position, Instant createdAt) {
+        this.imageId = imageId;
         this.position = position;
         this.createdAt = createdAt;
     }
@@ -45,12 +44,12 @@ public class SpotlightEntry implements Serializable, Sortable {
         this.id = id;
     }
 
-    public Image getImage() {
-        return image;
+    public Long getImageId() {
+        return imageId;
     }
 
-    public void setImage(Image image) {
-        this.image = image;
+    public void setImageId(Long imageId) {
+        this.imageId = imageId;
     }
 
     public Long getPosition() {

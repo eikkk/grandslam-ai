@@ -2,6 +2,7 @@ package com.plainprog.grandslam_ai.service.gallery;
 
 import com.plainprog.grandslam_ai.entity.account.Account;
 import com.plainprog.grandslam_ai.entity.img_gen.Image;
+import com.plainprog.grandslam_ai.entity.img_gen.ImageRepository;
 import com.plainprog.grandslam_ai.entity.img_management.*;
 import com.plainprog.grandslam_ai.helper.sorting.SortingService;
 import com.plainprog.grandslam_ai.object.mappers.GalleryMappers;
@@ -33,6 +34,8 @@ public class GalleryService {
     private SortingService sortingService;
     @Autowired
     private SpotlightEntryRepository spotlightEntryRepository;
+    @Autowired
+    private ImageRepository imageRepository;
 
 
     @Transactional
@@ -134,7 +137,7 @@ public class GalleryService {
         }
 
         // Find spotlight entries by image ids
-        List<SpotlightEntry> spotlightEntries = spotlightEntryRepository.findAllByImageIdInAndImageOwnerAccountId(imageIds, account.getId());
+        List<SpotlightEntry> spotlightEntries = spotlightEntryRepository.findAllByImageIdIn(imageIds);
 
         // If image is spotlighted, remove it from spotlight
         if (!spotlightEntries.isEmpty()) {
@@ -274,11 +277,15 @@ public class GalleryService {
     public GalleryResponse getGallery(Account account) {
         // Fetch all groups for this account that are not hidden
         List<GalleryGroup> groups = galleryGroupRepository.findAllByAccountId(account.getId());
-
+        // Get all spotlighted images for this account
+        List<SpotlightEntry> spotlightEntries = spotlightEntryRepository.findAllByAccountId(account.getId());
+        List<Long> spotlightedImageIds = spotlightEntries.stream()
+                .map(SpotlightEntry::getImageId)
+                .toList();
 
         // Map groups to response models
         List<GalleryGroupUI> responseGroups = groups.stream()
-            .map(GalleryMappers::mapToGalleryGroupUI)
+            .map(group -> GalleryMappers.mapToGalleryGroupUI(group, spotlightedImageIds))
             .sorted(Comparator.comparingLong(GalleryGroupUI::getPosition))
             .collect(Collectors.toList());
 
@@ -287,7 +294,10 @@ public class GalleryService {
             account.getId());
         List<GalleryEntryUI> ungroupedEntries = ungroupedEntriesDB.stream()
             .sorted(Comparator.comparing(GalleryEntry::getCreatedAt).reversed())
-            .map(GalleryMappers::mapToGalleryEntryUI)
+            .map(entry -> {
+                boolean spotlighted = spotlightedImageIds.contains(entry.getImage().getId());
+                return GalleryMappers.mapToGalleryEntryUI(entry, spotlighted);
+            })
             .collect(Collectors.toList());
 
         // Get hidden items
@@ -295,7 +305,7 @@ public class GalleryService {
             account.getId());
         List<GalleryEntryUI> hiddenEntries = hiddenEntriesDB.stream()
             .sorted(Comparator.comparing(GalleryEntry::getHiddenAt).reversed())
-            .map(GalleryMappers::mapToGalleryEntryUI)
+            .map(entry -> GalleryMappers.mapToGalleryEntryUI(entry, false))
             .collect(Collectors.toList());
 
         // Create the response with mapped entries
@@ -320,7 +330,7 @@ public class GalleryService {
         List<SpotlightEntry> spotlightEntries = spotlightEntryRepository.findAllByAccountId(account.getId());
 
         // Check if the image is already spotlighted
-        if (spotlightEntries.stream().anyMatch(spotlightEntry -> spotlightEntry.getImage().getId().equals(imageId))) {
+        if (spotlightEntries.stream().anyMatch(spotlightEntry -> spotlightEntry.getImageId().equals(imageId))) {
             throw new IllegalArgumentException("Image is already spotlighted");
         }
 
@@ -336,7 +346,7 @@ public class GalleryService {
         Long position = leastPosition - 1;
 
         // Create a new spotlight entry
-        SpotlightEntry spotlightEntry = new SpotlightEntry(entry.getImage(), position, Instant.now());
+        SpotlightEntry spotlightEntry = new SpotlightEntry(entry.getImage().getId(), position, Instant.now());
         spotlightEntryRepository.save(spotlightEntry);
     }
 
@@ -346,8 +356,13 @@ public class GalleryService {
         SpotlightEntry spotlightEntry = spotlightEntryRepository.findByImageId(imageId)
                 .orElseThrow(() -> new IllegalArgumentException("Spotlight entry not found"));
 
+        // Find the image by ID
+        Image image = imageRepository.findById(imageId)
+                .orElseThrow(() -> new IllegalArgumentException("Image not found"));
+
+
         // Verify ownership
-        if (!spotlightEntry.getImage().getOwnerAccount().getId().equals(account.getId())) {
+        if (!image.getOwnerAccount().getId().equals(account.getId())) {
             throw new IllegalArgumentException("Ownership verification failed");
         }
 
