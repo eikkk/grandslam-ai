@@ -2,34 +2,36 @@ package com.plainprog.grandslam_ai.object.response_models.image_management.galle
 
 import com.plainprog.grandslam_ai.object.dto.image.ImageDTO;
 
+import java.time.Instant;
+
 public class GalleryEntryUI {
-    private Long id;
-    private long position;
-    private boolean hidden;
-    private boolean shortlisted;
     private Long imageId;
+    private Long entryId;
+    private long position;
+    private Instant hiddenAt;
+    private boolean shortlisted;
     private ImageDTO image;
 
     // Constructors
     public GalleryEntryUI() {}
 
-    public GalleryEntryUI(Long id, long position, boolean hidden, boolean shortlisted,
-                        Long imageId, ImageDTO image) {
-        this.id = id;
+    public GalleryEntryUI(Long entryId, long position, Instant hiddenAt, boolean shortlisted,
+                          Long imageId, ImageDTO image) {
+        this.entryId = entryId;
         this.position = position;
-        this.hidden = hidden;
+        this.hiddenAt = hiddenAt;
         this.shortlisted = shortlisted;
         this.imageId = imageId;
         this.image = image;
     }
 
     // Getters and setters
-    public Long getId() {
-        return id;
+    public Long getEntryId() {
+        return entryId;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setEntryId(Long entryId) {
+        this.entryId = entryId;
     }
 
     public long getPosition() {
@@ -40,12 +42,12 @@ public class GalleryEntryUI {
         this.position = position;
     }
 
-    public boolean isHidden() {
-        return hidden;
+    public Instant getHiddenAt() {
+        return hiddenAt;
     }
 
-    public void setHidden(boolean hidden) {
-        this.hidden = hidden;
+    public void setHiddenAt(Instant hiddenAt) {
+        this.hiddenAt = hiddenAt;
     }
 
     public boolean isShortlisted() {

@@ -13,7 +13,7 @@ public class GalleryMappers {
         return new GalleryEntryUI(
                 entity.getId(),
                 entity.getPosition(),
-                entity.isHidden(),
+                entity.getHiddenAt(),
                 entity.isShortlisted(),
                 entity.getImage().getId(),
                 ImageMapper.mapToDTO(entity.getImage())

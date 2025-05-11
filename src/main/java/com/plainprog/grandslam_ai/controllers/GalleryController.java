@@ -4,7 +4,6 @@ import com.plainprog.grandslam_ai.entity.account.Account;
 import com.plainprog.grandslam_ai.object.dto.util.OperationOutcome;
 import com.plainprog.grandslam_ai.object.dto.util.OperationResultDTO;
 import com.plainprog.grandslam_ai.object.request_models.gallery.*;
-import com.plainprog.grandslam_ai.object.request_models.other.BatchOperationOnIntIds;
 import com.plainprog.grandslam_ai.object.request_models.other.BatchOperationOnLongIds;
 import com.plainprog.grandslam_ai.object.response_models.image_management.gallery.GalleryResponse;
 import com.plainprog.grandslam_ai.service.auth.helper.SessionDataHolder;
@@ -152,7 +151,7 @@ public class GalleryController {
             @RequestBody ReorderGalleryItemsRequest request) {
         try {
             Account account = SessionDataHolder.getPayload().getAccount();
-            galleryService.reorderGroupItems(id, request.getItemIds(), account);
+            galleryService.reorderGroupItems(id, request.getEntryIds(), account);
             return ResponseEntity.ok(new OperationResultDTO(OperationOutcome.SUCCESS, "Gallery items reordered successfully", ""));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new OperationResultDTO(OperationOutcome.FAILURE, e.getMessage(), ""));
@@ -172,6 +171,57 @@ public class GalleryController {
             return ResponseEntity.ok(gallery);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(new OperationResultDTO(OperationOutcome.FAILURE, "Failed to retrieve gallery", e.getMessage()));
+        }
+    }
+    /**
+     * Endpoint for spotlighting a gallery item.
+     * [Not covered with any tests]
+     */
+    @PostMapping("/items/{imageId}/spotlight")
+    public ResponseEntity<OperationResultDTO> spotlightItem(@PathVariable Long imageId) {
+        try {
+            Account account = SessionDataHolder.getPayload().getAccount();
+            galleryService.spotlightImage(imageId, account);
+            return ResponseEntity.ok(new OperationResultDTO(
+                    OperationOutcome.SUCCESS,
+                    "Gallery item spotlighted successfully",
+                    ""));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new OperationResultDTO(
+                    OperationOutcome.FAILURE,
+                    e.getMessage(),
+                    ""));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new OperationResultDTO(
+                    OperationOutcome.FAILURE,
+                    "Failed to spotlight gallery item",
+                    e.getMessage()));
+        }
+    }
+
+    /**
+     * Endpoint for removing spotlight from a gallery item.
+     * [Not covered with any tests]
+     */
+    @PostMapping("/items/{entryId}/un-spotlight")
+    public ResponseEntity<OperationResultDTO> unspotlightItem(@PathVariable Long entryId) {
+        try {
+            Account account = SessionDataHolder.getPayload().getAccount();
+            galleryService.removeSpotlightImage(entryId, account);
+            return ResponseEntity.ok(new OperationResultDTO(
+                    OperationOutcome.SUCCESS,
+                    "Gallery item removed from spotlight successfully",
+                    ""));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new OperationResultDTO(
+                    OperationOutcome.FAILURE,
+                    e.getMessage(),
+                    ""));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new OperationResultDTO(
+                    OperationOutcome.FAILURE,
+                    "Failed to remove gallery item from spotlight",
+                    e.getMessage()));
         }
     }
 }

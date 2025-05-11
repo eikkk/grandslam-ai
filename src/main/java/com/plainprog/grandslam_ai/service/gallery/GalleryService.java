@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class GalleryService {
+    public final static int MAX_SPOTLIGHTED_IMAGES = 12;
     @Autowired
     private GalleryEntryRepository galleryEntryRepository;
     @Autowired
@@ -30,6 +31,8 @@ public class GalleryService {
     private GalleryGroupRepository galleryGroupRepository;
     @Autowired
     private SortingService sortingService;
+    @Autowired
+    private SpotlightEntryRepository spotlightEntryRepository;
 
 
     @Transactional
@@ -121,14 +124,23 @@ public class GalleryService {
     }
 
     @Transactional
-    public void batchHideItems(List<Long> ids, Account account) {
+    public void batchHideItems(List<Long> imageIds, Account account) {
         // Find entries by IDs and owner in a single query
-        List<GalleryEntry> galleryEntries = galleryEntryRepository.findAllByIdInAndImageOwnerAccountId(
-                ids, account.getId());
+        List<GalleryEntry> galleryEntries = galleryEntryRepository.findAllByImageIdInAndImageOwnerAccountId(imageIds, account.getId());
 
         // If we didn't find all requested entries, some don't belong to this user
-        if (galleryEntries.size() < ids.size()) {
+        if (galleryEntries.size() < imageIds.size()) {
             throw new IllegalArgumentException("Not allowed to hide one or more of these images");
+        }
+
+        // Find spotlight entries by image ids
+        List<SpotlightEntry> spotlightEntries = spotlightEntryRepository.findAllByImageIdInAndImageOwnerAccountId(imageIds, account.getId());
+
+        // If image is spotlighted, remove it from spotlight
+        if (!spotlightEntries.isEmpty()) {
+            for (SpotlightEntry spotlightEntry : spotlightEntries) {
+                spotlightEntryRepository.delete(spotlightEntry);
+            }
         }
 
         // Hide the entries
@@ -139,13 +151,13 @@ public class GalleryService {
     }
 
     @Transactional
-    public void batchMoveItems(List<Long> itemIds, Integer targetGroupId, Account account) {
+    public void batchMoveItems(List<Long> imageIds, Integer targetGroupId, Account account) {
         // Find entries by IDs and owner in a single query
-        List<GalleryEntry> galleryEntries = galleryEntryRepository.findAllByIdInAndImageOwnerAccountId(
-                itemIds, account.getId());
+        List<GalleryEntry> galleryEntries = galleryEntryRepository.findAllByImageIdInAndImageOwnerAccountId(
+                imageIds, account.getId());
 
         // If we didn't find all requested entries, some don't belong to this user
-        if (galleryEntries.size() < itemIds.size()) {
+        if (galleryEntries.size() < imageIds.size()) {
             throw new IllegalArgumentException("Not allowed to move one or more of these images");
         }
 
@@ -191,10 +203,10 @@ public class GalleryService {
     }
 
     @Transactional
-    public void batchShortlistItems(List<Long> ids, boolean shortlisted, Account account) {
+    public void batchShortlistItems(List<Long> imageIds, boolean shortlisted, Account account) {
         // Find entries by IDs and owner in a single query
-        List<GalleryEntry> galleryEntries = galleryEntryRepository.findAllByIdInAndImageOwnerAccountId(
-                ids, account.getId());
+        List<GalleryEntry> galleryEntries = galleryEntryRepository.findAllByImageIdInAndImageOwnerAccountId(
+                imageIds, account.getId());
 
         //filter to take only hidden entries
         List<GalleryEntry> suitableEntries = galleryEntries.stream()
@@ -209,7 +221,7 @@ public class GalleryService {
     }
 
     @Transactional
-    public void reorderGroupItems(Integer groupId, List<Long> itemIds, Account account) {
+    public void reorderGroupItems(Integer groupId, List<Long> entryIds, Account account) {
         // Find the gallery group by ID
         GalleryGroup group = galleryGroupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Gallery group not found"));
@@ -221,10 +233,10 @@ public class GalleryService {
 
         // Find entries by IDs and owner
         List<GalleryEntry> galleryEntries = galleryEntryRepository.findAllByIdInAndImageOwnerAccountId(
-                itemIds, account.getId());
+                entryIds, account.getId());
 
         // If we didn't find all requested entries, some don't belong to this user
-        if (galleryEntries.size() < itemIds.size()) {
+        if (galleryEntries.size() < entryIds.size()) {
             throw new IllegalArgumentException("Not allowed to reorder one or more of these images");
         }
 
@@ -236,8 +248,8 @@ public class GalleryService {
         }
 
         // Update positions based on new order
-        for (int i = 0; i < itemIds.size(); i++) {
-            Long itemId = itemIds.get(i);
+        for (int i = 0; i < entryIds.size(); i++) {
+            Long itemId = entryIds.get(i);
             // Find entry with this ID
             GalleryEntry entry = galleryEntries.stream()
                     .filter(e -> e.getId().equals(itemId))
@@ -288,5 +300,58 @@ public class GalleryService {
 
         // Create the response with mapped entries
         return new GalleryResponse(responseGroups, ungroupedEntries, hiddenEntries);
+    }
+
+    @Transactional
+    public void spotlightImage(Long imageId, Account account) {
+        // Find the gallery entry by ID
+        GalleryEntry entry = galleryEntryRepository.findByImageId(imageId)
+                .orElseThrow(() -> new IllegalArgumentException("Gallery entry not found"));
+
+        if(entry.getHiddenAt() != null) {
+            throw new IllegalArgumentException("Cannot spotlight a hidden image");
+        }
+
+        // Verify ownership
+        if (!entry.getImage().getOwnerAccount().getId().equals(account.getId())) {
+            throw new IllegalArgumentException("Ownership verification failed");
+        }
+        // Get all spotlighted images of account
+        List<SpotlightEntry> spotlightEntries = spotlightEntryRepository.findAllByAccountId(account.getId());
+
+        // Check if the image is already spotlighted
+        if (spotlightEntries.stream().anyMatch(spotlightEntry -> spotlightEntry.getImage().getId().equals(imageId))) {
+            throw new IllegalArgumentException("Image is already spotlighted");
+        }
+
+        // Check if the maximum number of spotlighted images is reached
+        if (spotlightEntries.size() >= MAX_SPOTLIGHTED_IMAGES) {
+            throw new IllegalArgumentException("Maximum number of spotlighted images reached");
+        }
+
+        // Get the position of the new spotlight entry (place first)
+        Long leastPosition = spotlightEntries.stream()
+                .map(SpotlightEntry::getPosition)
+                .min(Long::compareTo).orElse(1L);
+        Long position = leastPosition - 1;
+
+        // Create a new spotlight entry
+        SpotlightEntry spotlightEntry = new SpotlightEntry(entry.getImage(), position, Instant.now());
+        spotlightEntryRepository.save(spotlightEntry);
+    }
+
+    @Transactional
+    public void removeSpotlightImage(Long imageId, Account account) {
+        // Find the spotlight entry by image ID
+        SpotlightEntry spotlightEntry = spotlightEntryRepository.findByImageId(imageId)
+                .orElseThrow(() -> new IllegalArgumentException("Spotlight entry not found"));
+
+        // Verify ownership
+        if (!spotlightEntry.getImage().getOwnerAccount().getId().equals(account.getId())) {
+            throw new IllegalArgumentException("Ownership verification failed");
+        }
+
+        // Delete the spotlight entry
+        spotlightEntryRepository.delete(spotlightEntry);
     }
 }
