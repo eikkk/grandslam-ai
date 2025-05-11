@@ -5,7 +5,7 @@ import com.plainprog.grandslam_ai.entity.img_gen.Image;
 import com.plainprog.grandslam_ai.entity.img_management.*;
 import com.plainprog.grandslam_ai.helper.sorting.SortingService;
 import com.plainprog.grandslam_ai.object.request_models.gallery.CreateGalleryGroupRequest;
-import org.checkerframework.checker.units.qual.A;
+import com.plainprog.grandslam_ai.object.request_models.gallery.UpdateGalleryRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,5 +53,25 @@ public class GalleryService {
 
         GalleryGroup newGroup = new GalleryGroup(request.getName(), position, account);
         return galleryGroupRepository.save(newGroup);
+    }
+
+    @Transactional
+    public void updateGroup(Integer id, UpdateGalleryRequest request, Account account) {
+        // Find the gallery group by ID
+        GalleryGroup group = galleryGroupRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Gallery group not found"));
+
+        // Verify ownership
+        if (!group.getAccount().getId().equals(account.getId())) {
+            throw new IllegalArgumentException("Not allowed to update this gallery group");
+        }
+
+        // Update the name
+        if (request.getNewName() != null)
+            group.setName(request.getNewName());
+        else throw new IllegalArgumentException("Null name not allowed");
+
+        // Save the updated group
+        galleryGroupRepository.save(group);
     }
 }

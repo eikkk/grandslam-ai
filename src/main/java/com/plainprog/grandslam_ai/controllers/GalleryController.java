@@ -4,6 +4,7 @@ import com.plainprog.grandslam_ai.entity.account.Account;
 import com.plainprog.grandslam_ai.object.dto.util.OperationOutcome;
 import com.plainprog.grandslam_ai.object.dto.util.OperationResultDTO;
 import com.plainprog.grandslam_ai.object.request_models.gallery.CreateGalleryGroupRequest;
+import com.plainprog.grandslam_ai.object.request_models.gallery.UpdateGalleryRequest;
 import com.plainprog.grandslam_ai.service.auth.helper.SessionDataHolder;
 import com.plainprog.grandslam_ai.service.gallery.GalleryService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,5 +26,18 @@ public class GalleryController {
         Account account = SessionDataHolder.getPayload().getAccount();
         galleryService.createGroup(request, account);
         return ResponseEntity.ok(new OperationResultDTO(OperationOutcome.SUCCESS, "Gallery group created successfully", ""));
+    }
+
+    /**
+     * Endpoint for updating an existing gallery group.
+     * [Covered with]: GalleryTests#testUpdateGalleryGroup()
+     */
+    @PostMapping("/groups/{id}/update")
+    public ResponseEntity<OperationResultDTO> updateGroup(
+            @PathVariable Integer id,
+            @RequestBody UpdateGalleryRequest request) {
+        Account account = SessionDataHolder.getPayload().getAccount();
+        galleryService.updateGroup(id, request, account);
+        return ResponseEntity.ok(new OperationResultDTO(OperationOutcome.SUCCESS, "Gallery group updated successfully", ""));
     }
 }

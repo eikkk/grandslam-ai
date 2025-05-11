@@ -4,8 +4,10 @@ import com.plainprog.grandslam_ai.BaseEndpointTest;
 import com.plainprog.grandslam_ai.entity.account.Account;
 import com.plainprog.grandslam_ai.entity.img_management.GalleryGroup;
 import com.plainprog.grandslam_ai.entity.img_management.GalleryGroupRepository;
+import com.plainprog.grandslam_ai.object.dto.util.OperationOutcome;
 import com.plainprog.grandslam_ai.object.dto.util.OperationResultDTO;
 import com.plainprog.grandslam_ai.object.request_models.gallery.CreateGalleryGroupRequest;
+import com.plainprog.grandslam_ai.object.request_models.gallery.UpdateGalleryRequest;
 import com.plainprog.grandslam_ai.service.account.helper.TestUserHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,7 +41,7 @@ public class GalleryTests extends BaseEndpointTest {
         //null names are also allowed, but not covered by this test
         String groupName = "Test Gallery Group " + System.currentTimeMillis();
         // Create request body
-        CreateGalleryGroupRequest request = new CreateGalleryGroupRequest(groupName);
+        UpdateGalleryRequest request = new UpdateGalleryRequest(groupName);
 
         // Test unauthenticated access
         testEndpointProtection(url, method, request, responseType);
@@ -69,5 +71,60 @@ public class GalleryTests extends BaseEndpointTest {
         groups.sort(Comparator.comparingLong(GalleryGroup::getPosition));
         assertFalse(groups.isEmpty(), "No groups found for test user");
         assertEquals(groups.get(0).getId(), createdGroup.getId(), "Created group is not first in sorting");
+    }
+
+    @Test
+    public void testUpdateGalleryGroup() {
+        // First create a gallery group to update
+        String initialName = "Test Gallery Group " + System.currentTimeMillis();
+        CreateGalleryGroupRequest createRequest = new CreateGalleryGroupRequest(initialName);
+
+        // Create the gallery group
+        ResponseEntity<?> createResponse = testAuthenticatedRequest(
+                baseUrl + "/gallery/groups/new?name=" + initialName,
+                HttpMethod.POST,
+                createRequest,
+                OperationResultDTO.class);
+
+        // Verify group was created
+        assertEquals(OperationOutcome.SUCCESS,
+                ((OperationResultDTO) createResponse.getBody()).getOperationOutcome());
+
+        // Get the created group from database
+        var groups = galleryGroupRepository.findAllByAccountId(testAccount.getId());
+        GalleryGroup createdGroup = groups.stream()
+                .filter(group -> group.getName().equals(initialName))
+                .findFirst()
+                .orElseThrow();
+
+        // Setup for update test
+        String updatedName = "Updated Gallery Group " + System.currentTimeMillis();
+        String url = baseUrl + "/gallery/groups/" + createdGroup.getId() + "/update";
+        HttpMethod method = HttpMethod.POST;
+        Class<?> responseType = OperationResultDTO.class;
+
+        // Create update request body
+        UpdateGalleryRequest updateRequest = new UpdateGalleryRequest(updatedName);
+
+        // Test unauthenticated access
+        testEndpointProtection(url, method, updateRequest, responseType);
+
+        // Test authenticated access
+        ResponseEntity<?> response = testAuthenticatedRequest(url, method, updateRequest, responseType);
+
+        // Verify response
+        assertNotNull(response.getBody(), "Response body is null");
+        OperationResultDTO responseBody = (OperationResultDTO) response.getBody();
+        assertEquals(OperationOutcome.SUCCESS, responseBody.getOperationOutcome(),
+                "Operation outcome is not success");
+
+        // Verify database update
+        GalleryGroup updatedGroup = galleryGroupRepository.findById(createdGroup.getId()).orElse(null);
+        assertNotNull(updatedGroup, "Updated group is null");
+        assertEquals(updatedName, updatedGroup.getName(), "Group name wasn't updated correctly");
+        assertEquals(createdGroup.getAccount().getId(), updatedGroup.getAccount().getId(),
+                "Group owner changed unexpectedly");
+        assertEquals(createdGroup.getPosition(), updatedGroup.getPosition(),
+                "Group position changed unexpectedly");
     }
 }
