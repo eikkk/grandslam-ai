@@ -5,6 +5,7 @@ import com.plainprog.grandslam_ai.entity.img_gen.Image;
 import com.plainprog.grandslam_ai.entity.img_management.*;
 import com.plainprog.grandslam_ai.helper.sorting.SortingService;
 import com.plainprog.grandslam_ai.object.request_models.gallery.CreateGalleryGroupRequest;
+import com.plainprog.grandslam_ai.object.request_models.gallery.GroupsChangeOrderRequest;
 import com.plainprog.grandslam_ai.object.request_models.gallery.UpdateGalleryRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,8 @@ public class GalleryService {
     private IncubatorEntryRepository incubatorEntryRepository;
     @Autowired
     private GalleryGroupRepository galleryGroupRepository;
+    @Autowired
+    private SortingService sortingService;
 
 
     @Transactional
@@ -73,5 +76,40 @@ public class GalleryService {
 
         // Save the updated group
         galleryGroupRepository.save(group);
+    }
+
+    @Transactional
+    public void changeGroupOrder(Integer id, GroupsChangeOrderRequest request, Account account) {
+        // Find the gallery group, previous and next groups by ID
+        GalleryGroup group = galleryGroupRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Gallery group not found"));
+        GalleryGroup prev = null;
+        GalleryGroup next = null;
+        if (request.getPlaceAfterGroupId() != null) {
+            prev = galleryGroupRepository.findById(request.getPlaceAfterGroupId())
+                    .orElseThrow(() -> new IllegalArgumentException("Previous group not found"));
+        }
+        if (request.getPlaceBeforeGroupId() != null) {
+            next = galleryGroupRepository.findById(request.getPlaceBeforeGroupId())
+                    .orElseThrow(() -> new IllegalArgumentException("Next group not found"));
+        }
+
+        // Verify ownership
+        if (!group.getAccount().getId().equals(account.getId())) {
+            throw new IllegalArgumentException("Not allowed to update this gallery group");
+        }
+
+        // Attempt to insert the group in proper place
+        boolean success = sortingService.reorder(group, prev, next);
+        if (success){
+            // Save the updated group
+            galleryGroupRepository.save(group);
+        } else {
+            // If reordering was not successful, we need to re-balance the positions
+            List<GalleryGroup> allGroups = galleryGroupRepository.findAllByAccountId(account.getId());
+            sortingService.rebalance(allGroups);
+            // Save all groups to update their positions
+            galleryGroupRepository.saveAll(allGroups);
+        }
     }
 }

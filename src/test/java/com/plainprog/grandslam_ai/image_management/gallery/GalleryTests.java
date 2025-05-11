@@ -7,6 +7,7 @@ import com.plainprog.grandslam_ai.entity.img_management.GalleryGroupRepository;
 import com.plainprog.grandslam_ai.object.dto.util.OperationOutcome;
 import com.plainprog.grandslam_ai.object.dto.util.OperationResultDTO;
 import com.plainprog.grandslam_ai.object.request_models.gallery.CreateGalleryGroupRequest;
+import com.plainprog.grandslam_ai.object.request_models.gallery.GroupsChangeOrderRequest;
 import com.plainprog.grandslam_ai.object.request_models.gallery.UpdateGalleryRequest;
 import com.plainprog.grandslam_ai.service.account.helper.TestUserHelper;
 import org.junit.jupiter.api.BeforeEach;
@@ -126,5 +127,113 @@ public class GalleryTests extends BaseEndpointTest {
                 "Group owner changed unexpectedly");
         assertEquals(createdGroup.getPosition(), updatedGroup.getPosition(),
                 "Group position changed unexpectedly");
+    }
+
+    @Test
+    public void testChangeGalleryGroupOrder() {
+        // Check if we have at least 3 gallery groups, create if needed
+        var existingGroups = galleryGroupRepository.findAllByAccountId(testAccount.getId());
+        while (existingGroups.size() < 3) {
+            String groupName = "Order Test Group " + System.currentTimeMillis() + existingGroups.size();
+            CreateGalleryGroupRequest createRequest = new CreateGalleryGroupRequest(groupName);
+
+            // Create additional gallery group
+            testAuthenticatedRequest(
+                    baseUrl + "/gallery/groups/new?name=" + groupName,
+                    HttpMethod.POST,
+                    createRequest,
+                    OperationResultDTO.class);
+
+            // Refresh the list of groups
+            existingGroups = galleryGroupRepository.findAllByAccountId(testAccount.getId());
+        }
+
+        // Sort groups by position to understand their current order
+        existingGroups.sort(Comparator.comparingLong(GalleryGroup::getPosition));
+
+        // Select three groups to work with
+        GalleryGroup firstGroup = existingGroups.get(0);
+        GalleryGroup secondGroup = existingGroups.get(1);
+        GalleryGroup thirdGroup = existingGroups.get(2);
+
+        // Define the endpoint URL
+        String orderUrl = baseUrl + "/gallery/groups/{id}/order";
+        HttpMethod method = HttpMethod.POST;
+        Class<?> responseType = OperationResultDTO.class;
+
+        // Test 1: Place the first group after the third group
+        GroupsChangeOrderRequest request1 = new GroupsChangeOrderRequest();
+        request1.setPlaceAfterGroupId(thirdGroup.getId());
+
+        // Test unauthenticated access
+        testEndpointProtection(orderUrl.replace("{id}", firstGroup.getId().toString()),
+                method, request1, responseType);
+
+        // Test authenticated access
+        ResponseEntity<?> response1 = testAuthenticatedRequest(
+                orderUrl.replace("{id}", firstGroup.getId().toString()),
+                method, request1, responseType);
+
+        // Verify response
+        assertNotNull(response1.getBody(), "Response body is null");
+        OperationResultDTO responseBody1 = (OperationResultDTO) response1.getBody();
+        assertEquals(OperationOutcome.SUCCESS, responseBody1.getOperationOutcome(),
+                "Operation outcome is not success");
+
+        // Verify database update - group order should now be: second, third, first
+        var updatedGroups = galleryGroupRepository.findAllByAccountId(testAccount.getId());
+        updatedGroups.sort(Comparator.comparingLong(GalleryGroup::getPosition));
+
+        // Find our test groups in the updated list
+        var updatedFirst = updatedGroups.stream()
+                .filter(g -> g.getId().equals(firstGroup.getId()))
+                .findFirst().orElseThrow();
+        var updatedSecond = updatedGroups.stream()
+                .filter(g -> g.getId().equals(secondGroup.getId()))
+                .findFirst().orElseThrow();
+        var updatedThird = updatedGroups.stream()
+                .filter(g -> g.getId().equals(thirdGroup.getId()))
+                .findFirst().orElseThrow();
+
+        // Verify the positions reflect the requested change
+        assertTrue(updatedSecond.getPosition() < updatedThird.getPosition(),
+                "Second group should be before third group");
+        assertTrue(updatedThird.getPosition() < updatedFirst.getPosition(),
+                "Third group should be before first group (which was moved to the end)");
+
+        // Test 2: Now place the first group before the second group
+        GroupsChangeOrderRequest request2 = new GroupsChangeOrderRequest();
+        request2.setPlaceBeforeGroupId(secondGroup.getId());
+
+        ResponseEntity<?> response2 = testAuthenticatedRequest(
+                orderUrl.replace("{id}", firstGroup.getId().toString()),
+                method, request2, responseType);
+
+        // Verify response
+        assertNotNull(response2.getBody(), "Response body is null");
+        OperationResultDTO responseBody2 = (OperationResultDTO) response2.getBody();
+        assertEquals(OperationOutcome.SUCCESS, responseBody2.getOperationOutcome(),
+                "Operation outcome is not success");
+
+        // Verify database update - group order should now be: first, second, third
+        updatedGroups = galleryGroupRepository.findAllByAccountId(testAccount.getId());
+        updatedGroups.sort(Comparator.comparingLong(GalleryGroup::getPosition));
+
+        // Find our test groups in the updated list again
+        updatedFirst = updatedGroups.stream()
+                .filter(g -> g.getId().equals(firstGroup.getId()))
+                .findFirst().orElseThrow();
+        updatedSecond = updatedGroups.stream()
+                .filter(g -> g.getId().equals(secondGroup.getId()))
+                .findFirst().orElseThrow();
+        updatedThird = updatedGroups.stream()
+                .filter(g -> g.getId().equals(thirdGroup.getId()))
+                .findFirst().orElseThrow();
+
+        // Verify the positions reflect the requested change
+        assertTrue(updatedFirst.getPosition() < updatedSecond.getPosition(),
+                "First group should be before second group");
+        assertTrue(updatedSecond.getPosition() < updatedThird.getPosition(),
+                "Second group should be before third group");
     }
 }
