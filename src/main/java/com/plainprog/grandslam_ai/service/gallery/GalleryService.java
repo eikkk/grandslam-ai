@@ -4,14 +4,21 @@ import com.plainprog.grandslam_ai.entity.account.Account;
 import com.plainprog.grandslam_ai.entity.img_gen.Image;
 import com.plainprog.grandslam_ai.entity.img_management.*;
 import com.plainprog.grandslam_ai.helper.sorting.SortingService;
+import com.plainprog.grandslam_ai.object.mappers.GalleryMappers;
 import com.plainprog.grandslam_ai.object.request_models.gallery.CreateGalleryGroupRequest;
 import com.plainprog.grandslam_ai.object.request_models.gallery.GroupsChangeOrderRequest;
 import com.plainprog.grandslam_ai.object.request_models.gallery.UpdateGalleryRequest;
+import com.plainprog.grandslam_ai.object.response_models.image_management.gallery.GalleryEntryUI;
+import com.plainprog.grandslam_ai.object.response_models.image_management.gallery.GalleryGroupUI;
+import com.plainprog.grandslam_ai.object.response_models.image_management.gallery.GalleryResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class GalleryService {
@@ -40,7 +47,7 @@ public class GalleryService {
         }
         //ungrouped gallery entries can't be ordered, that's we set position to 0
         var galleryEntries = images.stream()
-                .map(image -> new GalleryEntry(image, null, false, 0L, false))
+                .map(image -> new GalleryEntry(image, null, null, 0L, false))
                 .toList();
         //save gallery entries to db
         galleryEntryRepository.saveAll(galleryEntries);
@@ -111,5 +118,175 @@ public class GalleryService {
             // Save all groups to update their positions
             galleryGroupRepository.saveAll(allGroups);
         }
+    }
+
+    @Transactional
+    public void batchHideItems(List<Long> ids, Account account) {
+        // Find entries by IDs and owner in a single query
+        List<GalleryEntry> galleryEntries = galleryEntryRepository.findAllByIdInAndImageOwnerAccountId(
+                ids, account.getId());
+
+        // If we didn't find all requested entries, some don't belong to this user
+        if (galleryEntries.size() < ids.size()) {
+            throw new IllegalArgumentException("Not allowed to hide one or more of these images");
+        }
+
+        // Hide the entries
+        galleryEntries.forEach(entry -> entry.setHiddenAt(Instant.now()));
+
+        // Save the updated entries
+        galleryEntryRepository.saveAll(galleryEntries);
+    }
+
+    @Transactional
+    public void batchMoveItems(List<Long> itemIds, Integer targetGroupId, Account account) {
+        // Find entries by IDs and owner in a single query
+        List<GalleryEntry> galleryEntries = galleryEntryRepository.findAllByIdInAndImageOwnerAccountId(
+                itemIds, account.getId());
+
+        // If we didn't find all requested entries, some don't belong to this user
+        if (galleryEntries.size() < itemIds.size()) {
+            throw new IllegalArgumentException("Not allowed to move one or more of these images");
+        }
+
+        // If targetGroupId is not null, verify the group exists and belongs to the account
+        GalleryGroup targetGroup;
+        if (targetGroupId != null) {
+            targetGroup = galleryGroupRepository.findById(targetGroupId)
+                    .orElseThrow(() -> new IllegalArgumentException("Target gallery group not found"));
+
+            // Verify ownership of the target group
+            if (!targetGroup.getAccount().getId().equals(account.getId())) {
+                throw new IllegalArgumentException("Not allowed to move items to this gallery group");
+            }
+        } else {
+            targetGroup = null; // No group specified, set to null
+        }
+
+        // Update each entry's group
+        galleryEntries.forEach(entry -> entry.setGroup(targetGroup));
+
+        // Save the updated entries
+        galleryEntryRepository.saveAll(galleryEntries);
+    }
+
+    @Transactional
+    public void deleteGroup(Integer id, Account account) {
+        // Find the gallery group by ID
+        GalleryGroup group = galleryGroupRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Gallery group not found"));
+
+        // Verify ownership
+        if (!group.getAccount().getId().equals(account.getId())) {
+            throw new IllegalArgumentException("Not allowed to delete this gallery group");
+        }
+
+        // Check if the group is empty
+        if (!group.getEntries().isEmpty()) {
+            throw new IllegalArgumentException("Cannot delete a gallery group that contains images");
+        }
+
+        // Delete the group
+        galleryGroupRepository.delete(group);
+    }
+
+    @Transactional
+    public void batchShortlistItems(List<Long> ids, boolean shortlisted, Account account) {
+        // Find entries by IDs and owner in a single query
+        List<GalleryEntry> galleryEntries = galleryEntryRepository.findAllByIdInAndImageOwnerAccountId(
+                ids, account.getId());
+
+        //filter to take only hidden entries
+        List<GalleryEntry> suitableEntries = galleryEntries.stream()
+                .filter(entry -> entry.getHiddenAt() != null)
+                .toList();
+
+        // Update shortlist status for all entries
+        suitableEntries.forEach(entry -> entry.setShortlisted(shortlisted));
+
+        // Save the updated entries
+        galleryEntryRepository.saveAll(suitableEntries);
+    }
+
+    @Transactional
+    public void reorderGroupItems(Integer groupId, List<Long> itemIds, Account account) {
+        // Find the gallery group by ID
+        GalleryGroup group = galleryGroupRepository.findById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Gallery group not found"));
+
+        // Verify ownership
+        if (!group.getAccount().getId().equals(account.getId())) {
+            throw new IllegalArgumentException("Not allowed to reorder items in this gallery group");
+        }
+
+        // Find entries by IDs and owner
+        List<GalleryEntry> galleryEntries = galleryEntryRepository.findAllByIdInAndImageOwnerAccountId(
+                itemIds, account.getId());
+
+        // If we didn't find all requested entries, some don't belong to this user
+        if (galleryEntries.size() < itemIds.size()) {
+            throw new IllegalArgumentException("Not allowed to reorder one or more of these images");
+        }
+
+        // Verify all entries belong to the specified group
+        for (GalleryEntry entry : galleryEntries) {
+            if (entry.getGroup() == null || !entry.getGroup().getId().equals(groupId)) {
+                throw new IllegalArgumentException("One or more items do not belong to the specified group");
+            }
+        }
+
+        // Update positions based on new order
+        for (int i = 0; i < itemIds.size(); i++) {
+            Long itemId = itemIds.get(i);
+            // Find entry with this ID
+            GalleryEntry entry = galleryEntries.stream()
+                    .filter(e -> e.getId().equals(itemId))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Item not found"));
+
+            // Update position
+            entry.setPosition(SortingService.GAP * (i + 1));
+        }
+
+        // Save updated entries
+        galleryEntryRepository.saveAll(galleryEntries);
+    }
+
+    /**
+     * Retrieve the gallery for an account.
+     *
+     * @param account The account to retrieve the gallery for
+     * @return GalleryResponse containing organized gallery data
+     */
+    @Transactional(readOnly = true)
+    public GalleryResponse getGallery(Account account) {
+        // Fetch all groups for this account that are not hidden
+        List<GalleryGroup> groups = galleryGroupRepository.findAllByAccountId(account.getId());
+
+
+        // Map groups to response models
+        List<GalleryGroupUI> responseGroups = groups.stream()
+            .map(GalleryMappers::mapToGalleryGroupUI)
+            .sorted(Comparator.comparingLong(GalleryGroupUI::getPosition))
+            .collect(Collectors.toList());
+
+        // Get ungrouped items (not in any group and not hidden)
+        List<GalleryEntry> ungroupedEntriesDB = galleryEntryRepository.findAllByGroupIsNullAndHiddenAtIsNullAndImageOwnerAccountId(
+            account.getId());
+        List<GalleryEntryUI> ungroupedEntries = ungroupedEntriesDB.stream()
+            .sorted(Comparator.comparing(GalleryEntry::getCreatedAt).reversed())
+            .map(GalleryMappers::mapToGalleryEntryUI)
+            .collect(Collectors.toList());
+
+        // Get hidden items
+        List<GalleryEntry> hiddenEntriesDB = galleryEntryRepository.findAllByHiddenAtIsNotNullAndImageOwnerAccountId(
+            account.getId());
+        List<GalleryEntryUI> hiddenEntries = hiddenEntriesDB.stream()
+            .sorted(Comparator.comparing(GalleryEntry::getHiddenAt).reversed())
+            .map(GalleryMappers::mapToGalleryEntryUI)
+            .collect(Collectors.toList());
+
+        // Create the response with mapped entries
+        return new GalleryResponse(responseGroups, ungroupedEntries, hiddenEntries);
     }
 }

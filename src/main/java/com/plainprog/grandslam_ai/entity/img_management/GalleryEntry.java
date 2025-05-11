@@ -29,8 +29,8 @@ public class GalleryEntry implements Serializable, Sortable {
     )
     private GalleryGroup group;
 
-    @Column(nullable = false)
-    private boolean hidden = false;
+    @Column(name = "hidden_at")
+    private Instant hiddenAt;
 
     @Column
     private Long position;
@@ -44,10 +44,10 @@ public class GalleryEntry implements Serializable, Sortable {
     // Constructors
     public GalleryEntry() {}
 
-    public GalleryEntry(Image image, GalleryGroup group, boolean hidden, Long position, boolean shortlisted) {
+    public GalleryEntry(Image image, GalleryGroup group, Instant hiddenAt, Long position, boolean shortlisted) {
         this.image = image;
         this.group = group;
-        this.hidden = hidden;
+        this.hiddenAt = hiddenAt;
         this.position = position;
         this.shortlisted = shortlisted;
     }
@@ -74,12 +74,16 @@ public class GalleryEntry implements Serializable, Sortable {
         this.group = group;
     }
 
-    public boolean isHidden() {
-        return hidden;
+    public void setId(Long id) {
+        this.id = id;
     }
 
-    public void setHidden(boolean hidden) {
-        this.hidden = hidden;
+    public Instant getHiddenAt() {
+        return hiddenAt;
+    }
+
+    public void setHiddenAt(Instant hiddenAt) {
+        this.hiddenAt = hiddenAt;
     }
 
     public Long getPosition() {

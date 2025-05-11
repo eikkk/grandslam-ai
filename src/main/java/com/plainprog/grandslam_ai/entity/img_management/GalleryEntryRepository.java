@@ -12,4 +12,7 @@ public interface GalleryEntryRepository extends JpaRepository<GalleryEntry, Long
     @Query("SELECT MIN(e.position) FROM GalleryEntry e WHERE e.group.id = :groupId AND e.image.ownerAccount.id = :accountId")
     Integer findMinPositionByGroupIdAndAccountId(@Param("groupId") Integer groupId, @Param("accountId") Long accountId);
     List<GalleryEntry> findAllByImageIdIn(List<Long> imageIds);
+    List<GalleryEntry> findAllByIdInAndImageOwnerAccountId(List<Long> ids, Long ownerAccountId);
+    List<GalleryEntry> findAllByGroupIsNullAndHiddenAtIsNullAndImageOwnerAccountId(Long ownerAccountId);
+    List<GalleryEntry> findAllByHiddenAtIsNotNullAndImageOwnerAccountId(Long ownerAccountId);
 }
