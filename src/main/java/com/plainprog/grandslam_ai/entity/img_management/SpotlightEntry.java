@@ -1,5 +1,6 @@
 package com.plainprog.grandslam_ai.entity.img_management;
 
+import com.plainprog.grandslam_ai.entity.BaseEntity;
 import com.plainprog.grandslam_ai.entity.img_gen.Image;
 import com.plainprog.grandslam_ai.helper.sorting.Sortable;
 import jakarta.persistence.*;
@@ -9,7 +10,7 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "spotlight_entry")
-public class SpotlightEntry implements Serializable, Sortable {
+public class SpotlightEntry extends BaseEntity<Integer> implements Sortable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

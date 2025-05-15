@@ -1,5 +1,6 @@
 package com.plainprog.grandslam_ai.entity.img_management;
 
+import com.plainprog.grandslam_ai.entity.BaseEntity;
 import com.plainprog.grandslam_ai.entity.account.Account;
 import com.plainprog.grandslam_ai.helper.sorting.Sortable;
 import jakarta.persistence.*;
@@ -10,7 +11,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "gallery_group")
-public class GalleryGroup implements Serializable, Sortable {
+public class GalleryGroup extends BaseEntity<Integer> implements Sortable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

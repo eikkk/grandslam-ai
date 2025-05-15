@@ -1,13 +1,14 @@
 package com.plainprog.grandslam_ai.entity.img_management;
 
 
+import com.plainprog.grandslam_ai.entity.BaseEntity;
 import com.plainprog.grandslam_ai.entity.img_gen.Image;
 import jakarta.persistence.*;
 import java.io.Serializable;
 
 @Entity
 @Table(name = "incubator_entry")
-public class IncubatorEntry implements Serializable {
+public class IncubatorEntry extends BaseEntity<Long> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

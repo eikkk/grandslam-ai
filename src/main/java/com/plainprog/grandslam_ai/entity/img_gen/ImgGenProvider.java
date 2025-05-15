@@ -1,11 +1,12 @@
 package com.plainprog.grandslam_ai.entity.img_gen;
 
 
+import com.plainprog.grandslam_ai.entity.BaseEntity;
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "img_gen_provider")
-public class ImgGenProvider {
+public class ImgGenProvider extends BaseEntity<Integer> {
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     private Integer id;

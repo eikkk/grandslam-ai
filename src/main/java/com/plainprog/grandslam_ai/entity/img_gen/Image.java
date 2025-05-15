@@ -1,5 +1,6 @@
 package com.plainprog.grandslam_ai.entity.img_gen;
 
+import com.plainprog.grandslam_ai.entity.BaseEntity;
 import com.plainprog.grandslam_ai.entity.account.Account;
 import jakarta.persistence.*;
 import org.checkerframework.checker.units.qual.C;
@@ -8,7 +9,7 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "image")
-public class Image {
+public class Image extends BaseEntity<Long> {
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     private Long id;

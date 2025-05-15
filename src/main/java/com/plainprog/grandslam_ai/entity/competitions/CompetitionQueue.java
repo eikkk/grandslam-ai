@@ -1,12 +1,13 @@
 package com.plainprog.grandslam_ai.entity.competitions;
 
+import com.plainprog.grandslam_ai.entity.BaseEntity;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.time.Instant;
 
 @Entity
 @Table(name = "competition_queue")
-public class CompetitionQueue implements Serializable {
+public class CompetitionQueue extends BaseEntity<Long> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

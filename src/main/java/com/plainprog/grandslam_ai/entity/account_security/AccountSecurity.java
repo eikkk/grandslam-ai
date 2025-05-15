@@ -1,12 +1,13 @@
 package com.plainprog.grandslam_ai.entity.account_security;
 
+import com.plainprog.grandslam_ai.entity.BaseEntity;
 import jakarta.persistence.*;
 
 import java.time.Instant;
 
 @Entity
 @Table(name = "account_security")
-public class AccountSecurity {
+public class AccountSecurity extends BaseEntity<Long> {
     @Id
     @Column(name = "account_id")
     private Long accountId;
@@ -60,5 +61,9 @@ public class AccountSecurity {
 
     public void setVerifyEmailTokenCreatedAt(Instant verifyEmailTokenCreatedAt) {
         this.verifyEmailTokenCreatedAt = verifyEmailTokenCreatedAt;
+    }
+    
+    public Long getId() {
+        return accountId;
     }
 }

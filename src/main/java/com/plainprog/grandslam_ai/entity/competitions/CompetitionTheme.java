@@ -1,12 +1,13 @@
 package com.plainprog.grandslam_ai.entity.competitions;
 
+import com.plainprog.grandslam_ai.entity.BaseEntity;
 import com.plainprog.grandslam_ai.entity.img_gen.ImgGenModule;
 import jakarta.persistence.*;
 import java.io.Serializable;
 
 @Entity
 @Table(name = "competition_theme")
-public class CompetitionTheme implements Serializable {
+public class CompetitionTheme extends BaseEntity<Integer> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,6 +26,9 @@ public class CompetitionTheme implements Serializable {
 
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
+
+    @Column(name = "disabled", nullable = false)
+    private boolean disabled = false;
 
     // Constructors
     public CompetitionTheme() {}
@@ -74,5 +78,13 @@ public class CompetitionTheme implements Serializable {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public boolean isDisabled() {
+        return disabled;
+    }
+
+    public void setDisabled(boolean disabled) {
+        this.disabled = disabled;
     }
 }

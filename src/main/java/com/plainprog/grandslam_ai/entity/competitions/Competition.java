@@ -1,12 +1,12 @@
 package com.plainprog.grandslam_ai.entity.competitions;
 
+import com.plainprog.grandslam_ai.entity.BaseEntity;
 import jakarta.persistence.*;
-import java.io.Serializable;
 import java.time.Instant;
 
 @Entity
 @Table(name = "competition")
-public class Competition implements Serializable {
+public class Competition extends BaseEntity<Long> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,11 +34,11 @@ public class Competition implements Serializable {
     // Constructors
     public Competition() {}
 
-    public Competition(CompetitionTheme theme) {
+    public Competition(CompetitionTheme theme, Integer participantsCount) {
         this.theme = theme;
         this.createdAt = Instant.now();
         this.status = CompetitionStatus.OPEN;
-        this.participantsCount = 0;
+        this.participantsCount = participantsCount;
     }
 
     // Getters and Setters

@@ -1,12 +1,13 @@
 package com.plainprog.grandslam_ai.entity.account;
 
+import com.plainprog.grandslam_ai.entity.BaseEntity;
 import jakarta.persistence.*;
 
 import java.time.Instant;
 
 @Entity
 @Table(name = "account")
-public class Account {
+public class Account extends BaseEntity<Long> {
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     private Long id;
@@ -47,6 +48,9 @@ public class Account {
 
     public Long getId() {
         return id;
+    }
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public Instant getCreatedAt() {
