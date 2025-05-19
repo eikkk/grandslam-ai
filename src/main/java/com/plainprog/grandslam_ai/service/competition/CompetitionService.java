@@ -30,6 +30,8 @@ public class CompetitionService {
     CompetitionSubmissionRepository submissionRepository;
     @Autowired
     GalleryEntryRepository galleryEntryRepository;
+    @Autowired
+    CompetitionDrawBuilderService competitionDrawBuilderService;
 
     public List<CompetitionThemeGroup> getAllThemeGroupsByCompetitionStatus(Competition.CompetitionStatus status) {
         return competitionThemeGroupRepository.findAllByCompetitionsStatus(status);
@@ -94,7 +96,10 @@ public class CompetitionService {
         if (currentCompetitors >= competition.getParticipantsCount()) {
             // Start the competition
             competition.setStatus(Competition.CompetitionStatus.STARTED);
-            competitionRepository.save(competition);
+            competition = competitionRepository.save(competition);
+
+            // Build the competition draw asynchronously
+            competitionDrawBuilderService.buildCompetitionDraw(competition);
         }
 
         return new OperationResultDTO(OperationOutcome.SUCCESS, "Successfully submitted to competition", null);
