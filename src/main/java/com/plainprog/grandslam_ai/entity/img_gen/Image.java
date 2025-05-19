@@ -63,6 +63,9 @@ public class Image extends BaseEntity<Long> {
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
+    @Column(name = "elo")
+    private Integer elo;
+
     public Image() {
     }
 
@@ -202,5 +205,13 @@ public class Image extends BaseEntity<Long> {
 
     public void setDeletedAt(Instant deletedAt) {
         this.deletedAt = deletedAt;
+    }
+
+    public Integer getElo() {
+        return elo;
+    }
+
+    public void setElo(Integer elo) {
+        this.elo = elo;
     }
 }

@@ -85,7 +85,7 @@ public class CompetitionService {
         }
 
         // Create submission
-        CompetitionSubmission submission = new CompetitionSubmission(account.getId(), galleryEntry.getImage().getId(), competition);
+        CompetitionSubmission submission = new CompetitionSubmission(account.getId(), galleryEntry.getImage(), competition);
         submissionRepository.save(submission);
 
 
@@ -98,8 +98,13 @@ public class CompetitionService {
             competition.setStatus(Competition.CompetitionStatus.STARTED);
             competition = competitionRepository.save(competition);
 
-            // Build the competition draw asynchronously
-            competitionDrawBuilderService.buildCompetitionDraw(competition);
+            try {
+                // Build the competition draw asynchronously
+                competitionDrawBuilderService.buildCompetitionDraw(competition);
+            } catch (Exception e) {
+                // Handle the exception (e.g., log it)
+                System.out.println("Error while building competition draw: " + e.getMessage());
+            }
         }
 
         return new OperationResultDTO(OperationOutcome.SUCCESS, "Successfully submitted to competition", null);

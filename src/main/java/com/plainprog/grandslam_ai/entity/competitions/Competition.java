@@ -26,6 +26,9 @@ public class Competition extends BaseEntity<Long> {
     @Column(name = "participants_count")
     private Integer participantsCount;
 
+    @Column(name = "vote_target")
+    private Integer voteTarget;
+
     // Enum for competition status
     public enum CompetitionStatus {
         OPEN, STARTED, FINISHED
@@ -34,11 +37,12 @@ public class Competition extends BaseEntity<Long> {
     // Constructors
     public Competition() {}
 
-    public Competition(CompetitionTheme theme, Integer participantsCount) {
+    public Competition(CompetitionTheme theme, Integer participantsCount, Integer voteTarget) {
         this.theme = theme;
         this.createdAt = Instant.now();
         this.status = CompetitionStatus.OPEN;
         this.participantsCount = participantsCount;
+        this.voteTarget = voteTarget;
     }
 
     // Getters and Setters
@@ -80,6 +84,14 @@ public class Competition extends BaseEntity<Long> {
 
     public void setParticipantsCount(Integer participantsCount) {
         this.participantsCount = participantsCount;
+    }
+
+    public Integer getVoteTarget() {
+        return voteTarget;
+    }
+
+    public void setVoteTarget(Integer voteTarget) {
+        this.voteTarget = voteTarget;
     }
 
     @PrePersist

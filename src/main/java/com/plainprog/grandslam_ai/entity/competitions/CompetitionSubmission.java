@@ -1,6 +1,7 @@
 package com.plainprog.grandslam_ai.entity.competitions;
 
 import com.plainprog.grandslam_ai.entity.BaseEntity;
+import com.plainprog.grandslam_ai.entity.img_gen.Image;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.time.Instant;
@@ -16,8 +17,9 @@ public class CompetitionSubmission extends BaseEntity<Long> {
     @Column(name = "account_id", nullable = false)
     private Long accountId;
 
-    @Column(name = "image_id", nullable = false)
-    private Long imageId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "image_id", nullable = false)
+    private Image image;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "competition_id", nullable = false)
@@ -29,9 +31,9 @@ public class CompetitionSubmission extends BaseEntity<Long> {
     // Constructors
     public CompetitionSubmission() {}
 
-    public CompetitionSubmission(Long accountId, Long imageId, Competition competition) {
+    public CompetitionSubmission(Long accountId, Image image, Competition competition) {
         this.accountId = accountId;
-        this.imageId = imageId;
+        this.image = image;
         this.competition = competition;
         this.createdAt = Instant.now();
     }
@@ -53,12 +55,12 @@ public class CompetitionSubmission extends BaseEntity<Long> {
         this.accountId = accountId;
     }
 
-    public Long getImageId() {
-        return imageId;
+    public Image getImage() {
+        return image;
     }
 
-    public void setImageId(Long imageId) {
-        this.imageId = imageId;
+    public void setImage(Image image) {
+        this.image = image;
     }
 
     public Competition getCompetition() {

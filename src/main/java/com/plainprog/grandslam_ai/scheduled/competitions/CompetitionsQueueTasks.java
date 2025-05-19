@@ -16,6 +16,7 @@ import java.util.*;
 @Component
 public class CompetitionsQueueTasks {
     private static final int DEFAULT_COMPETITION_SLOTS = 8;
+    private static final int DEFAULT_COMPETITION_VOTE_TARGET = 10;
 
     @Autowired
     private CompetitionService competitionService;
@@ -110,7 +111,7 @@ public class CompetitionsQueueTasks {
     private void openCompetitionFromQueueItem(CompetitionQueue queueItem) {
         System.out.println("Opening competition from queue item: " + queueItem.getId() + " with theme: " + queueItem.getTheme().getId());
 
-        Competition competition = new Competition(queueItem.getTheme(), DEFAULT_COMPETITION_SLOTS);
+        Competition competition = new Competition(queueItem.getTheme(), DEFAULT_COMPETITION_SLOTS, DEFAULT_COMPETITION_VOTE_TARGET);
         competition = competitionService.saveCompetition(competition);
         System.out.println("Created new competition with ID: " + competition.getId() + ", slots: " + DEFAULT_COMPETITION_SLOTS);
 
