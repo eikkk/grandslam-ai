@@ -11,10 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 
@@ -81,6 +78,29 @@ public class CompetitionController {
             System.err.println("Error while fetching open competitions: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(null);
+        }
+    }
+    /**
+     * Vote for a match
+     */
+    @PostMapping("/matches/{matchId}/vote/{submissionId}")
+    public ResponseEntity<OperationResultDTO> voteForMatch(@RequestParam ("matchId") Long matchId,
+                                                           @RequestParam("submissionId") Long submissionId) {
+        Account account = SessionDataHolder.getPayload().getAccount();
+        try {
+            OperationResultDTO result = competitionService.voteForMatch(account, matchId, submissionId);
+            if (result.getOperationOutcome() == OperationOutcome.SUCCESS) {
+                return ResponseEntity.ok(result);
+            } else {
+                return ResponseEntity.badRequest().body(result);
+            }
+        } catch (Exception e) {
+            OperationResultDTO operationResultDTO = new OperationResultDTO(
+                    OperationOutcome.FAILURE,
+                    "Error voting for match",
+                    e.getMessage()
+            );
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(operationResultDTO);
         }
     }
 }

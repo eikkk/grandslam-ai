@@ -37,7 +37,7 @@ public class CompetitionMatch extends BaseEntity<Long> {
     private CompetitionSubmission winnerSubmission;
 
     @Column(name = "vote_deadline")
-    private LocalDateTime voteDeadline;
+    private Instant voteDeadline;
 
     @Column(name = "vote_target")
     private Integer voteTarget;
@@ -120,11 +120,11 @@ public class CompetitionMatch extends BaseEntity<Long> {
         this.winnerSubmission = winnerSubmission;
     }
 
-    public LocalDateTime getVoteDeadline() {
+    public Instant getVoteDeadline() {
         return voteDeadline;
     }
 
-    public void setVoteDeadline(LocalDateTime voteDeadline) {
+    public void setVoteDeadline(Instant voteDeadline) {
         this.voteDeadline = voteDeadline;
     }
 

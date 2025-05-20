@@ -4,8 +4,10 @@ import com.plainprog.grandslam_ai.entity.competitions.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,13 +16,15 @@ import java.util.Map;
 @Service
 public class CompetitionDrawBuilderService {
 
+    public static final int VOTE_DEADLINE_HOURS = 24;
+
     @Autowired
     private CompetitionMatchRepository competitionMatchRepository;
     @Autowired
     private CompetitionSubmissionRepository competitionSubmissionRepository;
 
     @Async
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public void buildCompetitionDraw(Competition competition) {
         //verify there are no matches already
         if (competitionMatchRepository.countByCompetitionId(competition.getId()) > 0) {
@@ -80,6 +84,32 @@ public class CompetitionDrawBuilderService {
                 match = competitionMatchRepository.save(match);
                 // Add the match to the map
                 competitionMap.computeIfAbsent(round, k -> new ArrayList<>()).add(match);
+            }
+        }
+    }
+
+    @Async
+    @Transactional(isolation = Isolation.SERIALIZABLE)
+    public void processMatchResult(CompetitionMatch match) {
+        if (match.getNextMatch() != null) {
+            // Get the winner submission
+            CompetitionSubmission winnerSubmission = match.getWinnerSubmission();
+            if (winnerSubmission != null) {
+                // We have to determine if in the next stage winner is submission1 or submission2
+                // it will be submission1 if the matchIndex is even, otherwise submission2
+                int matchIndex = match.getMatchIndex();
+                boolean isEvenMatchIndex = matchIndex % 2 == 0;
+                CompetitionMatch nextMatch = competitionMatchRepository.findByIdWithLock(match.getNextMatch().getId());
+                if (isEvenMatchIndex) {
+                    nextMatch.setSubmission1(winnerSubmission);
+                } else {
+                    nextMatch.setSubmission2(winnerSubmission);
+                }
+                // determine vote deadline
+                Instant voteDeadline = Instant.now().plusSeconds(VOTE_DEADLINE_HOURS * 3600);
+                nextMatch.setVoteDeadline(voteDeadline);
+                // Save the next match
+                competitionMatchRepository.save(nextMatch);
             }
         }
     }

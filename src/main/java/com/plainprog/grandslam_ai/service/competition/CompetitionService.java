@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,6 +39,10 @@ public class CompetitionService {
     GalleryEntryRepository galleryEntryRepository;
     @Autowired
     CompetitionDrawBuilderService competitionDrawBuilderService;
+    @Autowired
+    CompetitionMatchRepository competitionMatchRepository;
+    @Autowired
+    MatchVoteRepository matchVoteRepository;
 
     public List<CompetitionThemeGroup> getAllThemeGroupsByCompetitionStatus(Competition.CompetitionStatus status) {
         return competitionThemeGroupRepository.findAllByCompetitionsStatus(status);
@@ -194,5 +199,57 @@ public class CompetitionService {
                 .toList();
 
         return new OpenCompetitionsResponse(openCompetitionItems, upcomingCompetitionItems);
+    }
+
+    @Transactional(isolation = Isolation.SERIALIZABLE)
+    public OperationResultDTO voteForMatch(Account account, Long matchId, Long submissionId) {
+        CompetitionMatch match = competitionMatchRepository.findByIdWithLock(matchId);
+        if (match == null) {
+            return new OperationResultDTO(OperationOutcome.FAILURE, "Match not found", null);
+        }
+        if (match.getWinnerSubmission() != null) {
+            return new OperationResultDTO(OperationOutcome.FAILURE, "Match already has a winner", null);
+        }
+        if (match.getSubmission1().getAccountId().equals(account.getId()) || match.getSubmission2().getAccountId().equals(account.getId())) {
+            return new OperationResultDTO(OperationOutcome.FAILURE, "You cannot vote for your own submission", null);
+        }
+        // Prevent duplicate votes
+        if (matchVoteRepository.existsByAccountIdAndMatchId(account.getId(), matchId)) {
+            return new OperationResultDTO(OperationOutcome.FAILURE, "You have already voted for this match", null);
+        }
+
+
+        CompetitionSubmission votedSubmission = null;
+        if (match.getSubmission1().getId().equals(submissionId)) {
+            votedSubmission = match.getSubmission1();
+        } else if (match.getSubmission2().getId().equals(submissionId)) {
+            votedSubmission = match.getSubmission2();
+        } else {
+            return new OperationResultDTO(OperationOutcome.FAILURE, "Invalid submission ID", null);
+        }
+
+        boolean shouldFinishMatch = false;
+        boolean isPastDeadline = match.getVoteDeadline().compareTo(Instant.now()) < 0;
+        if (isPastDeadline) {
+            shouldFinishMatch = true;
+        } else {
+            // Check if the match is already finished
+            long votesCount = matchVoteRepository.countByMatchIdAndSubmissionIdWithLock(matchId, submissionId);
+            if (votesCount + 1 >= match.getVoteTarget()) {
+                shouldFinishMatch = true;
+            }
+        }
+
+        MatchVote vote = new MatchVote(account, match, votedSubmission);
+        matchVoteRepository.save(vote);
+
+        if (shouldFinishMatch) {
+            // Set the winner submission
+            match.setWinnerSubmission(votedSubmission);
+            match = competitionMatchRepository.save(match);
+            competitionDrawBuilderService.processMatchResult(match);
+        }
+
+        return new OperationResultDTO(OperationOutcome.SUCCESS, "Vote submitted successfully", null);
     }
 }
