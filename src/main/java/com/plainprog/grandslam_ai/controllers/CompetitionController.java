@@ -4,15 +4,19 @@ import com.plainprog.grandslam_ai.entity.account.Account;
 import com.plainprog.grandslam_ai.object.dto.util.OperationOutcome;
 import com.plainprog.grandslam_ai.object.dto.util.OperationResultDTO;
 import com.plainprog.grandslam_ai.object.request_models.competition.SubmissionRequest;
+import com.plainprog.grandslam_ai.object.response_models.competition.OpenCompetitionsResponse;
 import com.plainprog.grandslam_ai.service.auth.helper.SessionDataHolder;
 import com.plainprog.grandslam_ai.service.competition.CompetitionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+
+import java.util.ArrayList;
 
 @Controller
 @RequestMapping("/api/competition")
@@ -63,6 +67,20 @@ public class CompetitionController {
                     e.getMessage()
             );
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(operationResultDTO);
+        }
+    }
+    /**
+     * Get open and upcoming competitions
+     */
+    @GetMapping("/open")
+    public ResponseEntity<OpenCompetitionsResponse> getOpenCompetitions() {
+        try {
+            OpenCompetitionsResponse result = competitionService.getOpenCompetitions();
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            System.err.println("Error while fetching open competitions: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(null);
         }
     }
 }

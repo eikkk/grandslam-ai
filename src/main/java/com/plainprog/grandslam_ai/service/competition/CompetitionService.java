@@ -2,18 +2,24 @@ package com.plainprog.grandslam_ai.service.competition;
 
 import com.plainprog.grandslam_ai.entity.account.Account;
 import com.plainprog.grandslam_ai.entity.competitions.*;
+import com.plainprog.grandslam_ai.entity.competitions.projections.CompetitionSubmissionsCount;
 import com.plainprog.grandslam_ai.entity.img_gen.Image;
 import com.plainprog.grandslam_ai.entity.img_management.GalleryEntry;
 import com.plainprog.grandslam_ai.entity.img_management.GalleryEntryRepository;
 import com.plainprog.grandslam_ai.object.dto.util.OperationOutcome;
 
 import com.plainprog.grandslam_ai.object.dto.util.OperationResultDTO;
+import com.plainprog.grandslam_ai.object.mappers.CompetitionMappers;
 import com.plainprog.grandslam_ai.object.request_models.competition.SubmissionRequest;
+import com.plainprog.grandslam_ai.object.response_models.competition.OpenCompetitionItemModel;
+import com.plainprog.grandslam_ai.object.response_models.competition.OpenCompetitionsResponse;
+import com.plainprog.grandslam_ai.object.response_models.competition.UpcomingCompetitionItemModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -154,5 +160,39 @@ public class CompetitionService {
 
         return new OperationResultDTO(OperationOutcome.SUCCESS,
                 "Successfully quit competition", null);
+    }
+
+    /**
+     * Retrieves open competitions and upcoming competitions from the queue.
+     *
+     * @return OpenCompetitionsResponse containing open and upcoming competitions
+     */
+    public OpenCompetitionsResponse getOpenCompetitions() {
+        List<Competition> openCompetitions = competitionRepository.findAllByStatus(Competition.CompetitionStatus.OPEN);
+        List<CompetitionQueue> upcomingQueue = competitionQueueRepository.findAllByStatus(CompetitionQueue.CompetitionQueueStatus.NEW);
+
+        List<Long> competitionIds = openCompetitions.stream()
+                .map(Competition::getId)
+                .toList();
+
+        List<CompetitionSubmissionsCount> submissionCounts = submissionRepository.findCompetitionSubmissionCountsByCompetitionIds(competitionIds);
+
+
+        List<OpenCompetitionItemModel> openCompetitionItems = new ArrayList<>();
+        for (Competition competition : openCompetitions) {
+            long submissionCount = submissionCounts.stream()
+                    .filter(count -> count.getCompetitionId().equals(competition.getId()))
+                    .map(CompetitionSubmissionsCount::getSubmissionCount)
+                    .findFirst()
+                    .orElse(0L);
+            OpenCompetitionItemModel item = CompetitionMappers.mapToOpenCompetitionItemModel(competition, (int) submissionCount);
+            openCompetitionItems.add(item);
+        }
+
+        List<UpcomingCompetitionItemModel> upcomingCompetitionItems = upcomingQueue.stream()
+                .map(CompetitionMappers::mapToUpcomingCompetitionItemModel)
+                .toList();
+
+        return new OpenCompetitionsResponse(openCompetitionItems, upcomingCompetitionItems);
     }
 }

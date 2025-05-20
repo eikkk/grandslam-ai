@@ -1,5 +1,6 @@
 package com.plainprog.grandslam_ai.entity.competitions;
 
+import com.plainprog.grandslam_ai.entity.competitions.projections.CompetitionSubmissionsCount;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -21,5 +22,11 @@ public interface CompetitionSubmissionRepository extends JpaRepository<Competiti
             @Param("imageId") Long imageId);
 
     List<CompetitionSubmission> findAllByCompetitionId(Long competitionId);
+
+    @Query("SELECT cs.competition.id AS competitionId, COUNT(cs) AS submissionCount " +
+            "FROM CompetitionSubmission cs " +
+            "WHERE cs.competition.id IN :competitionIds " +
+            "GROUP BY cs.competition.id")
+    List<CompetitionSubmissionsCount> findCompetitionSubmissionCountsByCompetitionIds(@Param("competitionIds") List<Long> competitionIds);
 
 }
