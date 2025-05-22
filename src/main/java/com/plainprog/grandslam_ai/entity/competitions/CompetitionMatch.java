@@ -46,11 +46,17 @@ public class CompetitionMatch extends BaseEntity<Long> {
     @JoinColumn(name = "next_match_id")
     private CompetitionMatch nextMatch;
 
-    @Column(name = "insertedAt")
+    @Column(name = "inserted_at")
     private Instant insertedAt;
 
-    @Column(name = "updatedAt")
-    private LocalDateTime updatedAt;
+    @Column(name = "updated_at")
+    private Instant updatedAt;
+
+    @Column(name = "started_at")
+    private Instant startedAt;
+
+    @Column(name = "finished_at")
+    private Instant finishedAt;
 
     public CompetitionMatch() {
     }
@@ -152,19 +158,38 @@ public class CompetitionMatch extends BaseEntity<Long> {
         this.insertedAt = insertedAt;
     }
 
-    public LocalDateTime getUpdatedAt() {
+    public Instant getUpdatedAt() {
         return updatedAt;
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
+    public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
     }
 
+    public Instant getStartedAt() {
+        return startedAt;
+    }
+
+    public void setStartedAt(Instant startedAt) {
+        this.startedAt = startedAt;
+    }
+
+    public Instant getFinishedAt() {
+        return finishedAt;
+    }
+
+    public void setFinishedAt(Instant finishedAt) {
+        this.finishedAt = finishedAt;
+    }
 
     @PrePersist
     public void prePersist() {
         if (insertedAt == null) {
             insertedAt = Instant.now();
         }
+    }
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = Instant.now();
     }
 }

@@ -5,6 +5,7 @@ import com.plainprog.grandslam_ai.object.dto.util.OperationOutcome;
 import com.plainprog.grandslam_ai.object.dto.util.OperationResultDTO;
 import com.plainprog.grandslam_ai.object.request_models.competition.SubmissionRequest;
 import com.plainprog.grandslam_ai.object.response_models.competition.OpenCompetitionsResponse;
+import com.plainprog.grandslam_ai.object.response_models.competition.VotingQueueResponse;
 import com.plainprog.grandslam_ai.service.auth.helper.SessionDataHolder;
 import com.plainprog.grandslam_ai.service.competition.CompetitionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -101,6 +102,21 @@ public class CompetitionController {
                     e.getMessage()
             );
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(operationResultDTO);
+        }
+    }
+    /**
+     * Get active matches
+     */
+    @GetMapping("/matches/active")
+    public ResponseEntity<VotingQueueResponse> getActiveMatches() {
+        Account account = SessionDataHolder.getPayload().getAccount();
+        try {
+            VotingQueueResponse result = competitionService.getVotingQueue(account);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            System.err.println("Error while fetching active matches: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(null);
         }
     }
 }

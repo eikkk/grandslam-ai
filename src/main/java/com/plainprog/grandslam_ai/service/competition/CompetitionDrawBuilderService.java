@@ -78,6 +78,7 @@ public class CompetitionDrawBuilderService {
                     int submissionIndex2 =  participantsCount - 1 - submissionIndex1;
                     match.setSubmission1(submissions.get(submissionIndex1));
                     match.setSubmission2(submissions.get(submissionIndex2));
+                    match.setStartedAt(Instant.now());
                 }
 
                 // Save the match to the database
@@ -108,6 +109,10 @@ public class CompetitionDrawBuilderService {
                 // determine vote deadline
                 Instant voteDeadline = Instant.now().plusSeconds(VOTE_DEADLINE_HOURS * 3600);
                 nextMatch.setVoteDeadline(voteDeadline);
+                // if both competitors are in the match, set started at
+                if (nextMatch.getSubmission1() != null && nextMatch.getSubmission2() != null) {
+                    nextMatch.setStartedAt(Instant.now());
+                }
                 // Save the next match
                 competitionMatchRepository.save(nextMatch);
             }

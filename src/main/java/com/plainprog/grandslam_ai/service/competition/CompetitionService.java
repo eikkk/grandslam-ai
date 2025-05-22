@@ -10,11 +10,11 @@ import com.plainprog.grandslam_ai.object.dto.util.OperationOutcome;
 
 import com.plainprog.grandslam_ai.object.dto.util.OperationResultDTO;
 import com.plainprog.grandslam_ai.object.mappers.CompetitionMappers;
+import com.plainprog.grandslam_ai.object.mappers.MatchMappers;
 import com.plainprog.grandslam_ai.object.request_models.competition.SubmissionRequest;
-import com.plainprog.grandslam_ai.object.response_models.competition.OpenCompetitionItemModel;
-import com.plainprog.grandslam_ai.object.response_models.competition.OpenCompetitionsResponse;
-import com.plainprog.grandslam_ai.object.response_models.competition.UpcomingCompetitionItemModel;
+import com.plainprog.grandslam_ai.object.response_models.competition.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +25,9 @@ import java.util.List;
 
 @Service
 public class CompetitionService {
+    private final int VOTING_QUEUE_CHUNK_SIZE = 6;
+
+
     @Autowired
     CompetitionRepository competitionRepository;
     @Autowired
@@ -246,10 +249,29 @@ public class CompetitionService {
         if (shouldFinishMatch) {
             // Set the winner submission
             match.setWinnerSubmission(votedSubmission);
+            match.setFinishedAt(Instant.now());
             match = competitionMatchRepository.save(match);
             competitionDrawBuilderService.processMatchResult(match);
         }
 
         return new OperationResultDTO(OperationOutcome.SUCCESS, "Vote submitted successfully", null);
+    }
+
+    public VotingQueueResponse getVotingQueue(Account account) {
+        if (account == null) {
+            throw new IllegalArgumentException("Account cannot be null");
+        }
+        // get first N(VOTING_QUEUE_CHUNK_SIZE) matches sorted by matchStartedAt from oldest to newest where match is not finished (winnerSubmission is null)
+        PageRequest pageRequest = PageRequest.of(0, VOTING_QUEUE_CHUNK_SIZE);
+        List<CompetitionMatch> matches = competitionMatchRepository.findUnfinishedMatchesExcludingAccount(account.getId(), pageRequest);
+        List<ActiveMatchVotingInfo> votingItems = matches.stream()
+                .map(match -> {
+                    Image image1 = match.getSubmission1().getImage();
+                    Image image2 = match.getSubmission2().getImage();
+                    CompetitionSubmission submission2 = match.getSubmission2();
+                    return MatchMappers.mapToMatchVotingInfo(match, image1, image2);
+                })
+                .toList();
+        return new VotingQueueResponse(votingItems);
     }
 }
