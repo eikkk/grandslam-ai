@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface ImageRepository extends JpaRepository<Image, Long> {
     Optional<Image> findFirstByOwnerAccountId(Long ownerAccountId);
     Optional<Image> findFirstByOwnerAccountIdNot(Long id);
+    List<Image> findAllByOwnerAccountId(Long ownerAccountId);
 }

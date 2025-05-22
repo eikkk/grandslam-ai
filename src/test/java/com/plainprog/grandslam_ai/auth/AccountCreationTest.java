@@ -8,7 +8,7 @@ import com.plainprog.grandslam_ai.object.dto.util.OperationOutcome;
 import com.plainprog.grandslam_ai.object.dto.util.OperationResultDTO;
 import com.plainprog.grandslam_ai.object.request_models.auth.CreateAccountRequest;
 import com.plainprog.grandslam_ai.service.account.AccountService;
-import com.plainprog.grandslam_ai.service.account.helper.TestUserHelper;
+import com.plainprog.grandslam_ai.service.account.helper.TestHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,8 +32,6 @@ public class AccountCreationTest {
 
     @Value("${app.url.base}")
     private String baseUrl;
-    @Value("${app.test.account.email}")
-    private String testEmail;
     @Autowired
     private TestRestTemplate restTemplate;
     @Autowired
@@ -43,19 +41,19 @@ public class AccountCreationTest {
     @Autowired
     private AccountSecurityRepository accountSecurityRepository;
     @Autowired
-    private TestUserHelper testUserHelper;
+    private TestHelper testHelper;
 
+    private final String testEmail = "test_account_creation@gslm.com";
 
     @BeforeEach
     public void clearTestUser() {
-        testUserHelper.clearTestUser();
+        testHelper.clearTestUser(testEmail);
     }
 
 
     //TODO: ENVIRONMENT SETUP FOR TESTS TO NOT RUN ON PROD
     @Test
     public void testCreateAccountEndpoint() throws Exception {
-        Account account = null;
         try{
             // Given
             CreateAccountRequest request = new CreateAccountRequest(testEmail);
@@ -73,7 +71,7 @@ public class AccountCreationTest {
             assertEquals(OperationOutcome.SUCCESS, result.getOperationOutcome());
 
             // Find by email in DB
-            account = accountRepository.findByEmail(request.getEmail());
+            Account account = accountRepository.findByEmail(request.getEmail());
             assertNotNull(account);
             assertEquals(testEmail, account.getEmail());
 

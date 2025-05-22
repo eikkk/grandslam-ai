@@ -13,13 +13,12 @@ import com.plainprog.grandslam_ai.object.dto.util.OperationResultDTO;
 import com.plainprog.grandslam_ai.object.request_models.other.BatchOperationOnLongIds;
 import com.plainprog.grandslam_ai.object.response_models.generation.ImgGenResponse;
 import com.plainprog.grandslam_ai.object.response_models.image_management.incubator.IncubatorResponseModel;
-import com.plainprog.grandslam_ai.service.account.helper.TestUserHelper;
+import com.plainprog.grandslam_ai.service.account.helper.TestHelper;
 import com.plainprog.grandslam_ai.service.gcp.GCPStorageService;
 import com.plainprog.grandslam_ai.service.generation.TestGenerationHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
 import java.util.ArrayList;
@@ -31,8 +30,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class IncubatorTests extends BaseEndpointTest {
 
-    @Value("${app.test.account.email}")
-    private String testEmail;
     @Autowired
     private TestRestTemplate restTemplate;
     @Autowired
@@ -44,14 +41,15 @@ public class IncubatorTests extends BaseEndpointTest {
     @Autowired
     private GCPStorageService gcpStorageService;
     @Autowired
-    private TestUserHelper testUserHelper;
+    private TestHelper testHelper;
 
     private List<IncubatorEntry> testEntries;
+    private Account testAcc;
 
     @BeforeEach
     public void ensureEntriesExist() throws Exception {
         //Ensures there are at least two incubator images of test user
-        Account testAcc = testUserHelper.ensureTestUserExists();
+        testAcc = testHelper.ensureTestUserExists().getAccount();
         List<IncubatorEntry> entries = incubatorEntryRepository.findAllByImageOwnerAccountId(testAcc.getId());
         if (entries.size() < 2) {
             // Create two test entries

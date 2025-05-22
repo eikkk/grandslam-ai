@@ -1,6 +1,6 @@
 package com.plainprog.grandslam_ai.config;
 
-import com.plainprog.grandslam_ai.service.account.helper.TestUserHelper;
+import com.plainprog.grandslam_ai.service.account.helper.TestHelper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.boot.test.context.TestConfiguration;
 
@@ -8,7 +8,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 public class TestConfig {
 
     @Bean
-    public TestUserHelper testUserHelper() {
-        return new TestUserHelper();
+    public TestHelper testUserHelper() {
+        return new TestHelper();
     }
 }

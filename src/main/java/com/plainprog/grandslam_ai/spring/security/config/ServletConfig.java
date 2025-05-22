@@ -1,6 +1,5 @@
 package com.plainprog.grandslam_ai.spring.security.config;
 
-import com.plainprog.grandslam_ai.service.account.helper.TestUserHelper;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.SessionTrackingMode;

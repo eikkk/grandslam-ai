@@ -1,20 +1,13 @@
 package com.plainprog.grandslam_ai.generation;
 
 import com.plainprog.grandslam_ai.BaseEndpointTest;
-import com.plainprog.grandslam_ai.config.TestConfig;
-import com.plainprog.grandslam_ai.object.request_models.generation.ImgGenRequest;
 import com.plainprog.grandslam_ai.object.response_models.generation.ImgGenModulesResponse;
 import com.plainprog.grandslam_ai.object.response_models.generation.ModulesHealthCheckResponse;
-import com.plainprog.grandslam_ai.service.account.helper.TestUserHelper;
+import com.plainprog.grandslam_ai.service.account.helper.TestHelper;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -22,7 +15,7 @@ public class ModulesTest extends BaseEndpointTest {
     @Autowired
     private TestRestTemplate restTemplate;
     @Autowired
-    private TestUserHelper testUserHelper;
+    private TestHelper testHelper;
 
     @Test
     public void healthCheckTest() throws Exception {

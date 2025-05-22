@@ -35,10 +35,6 @@ public class AccountService {
     @Value("${app.brand.name}")
     private String appName;
 
-    @Value("${app.test.account.email}")
-    private String testEmail;
-    @Value("${app.test.account.password}")
-    private String testAccPass;
 
     /**
      * Given the email creates an account and account_security. Generates random password
@@ -52,7 +48,7 @@ public class AccountService {
             return new AccountCreationDTO(null, null, null, "Account with this email already exists");
         }
 
-        String pass = testEmail.equals(email) ? testAccPass : PassGenHelp.randomPassword();
+        String pass = PassGenHelp.randomPassword();
         String hashPass = passwordEncoder.encode(pass);
 
         Account acc = new Account(email, false, Instant.now());
@@ -138,7 +134,7 @@ public class AccountService {
     public SimpleOperationResultDTO sendRegistrationEmail(Account account, AccountSecurity accountSecurity, String pass) {
         String token = PassGenHelp.randomEmailVerificationToken();
         String uriEncodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8);
-        String link = "http://localhost:8080/verification?token=" + uriEncodedToken;
+        String link = baseUrl + "/verification?token=" + uriEncodedToken;
         Map<String,Object> model = Map.of("password", pass, "link", link);
         boolean sent = emailService.sendTemplateEmail(account.getEmail(), "Verification for " + appName, model, "VerificationAndPasswordEmail.ftl");
         if (!sent) {

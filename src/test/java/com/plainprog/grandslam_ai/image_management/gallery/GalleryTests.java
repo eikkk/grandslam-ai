@@ -9,7 +9,7 @@ import com.plainprog.grandslam_ai.object.dto.util.OperationResultDTO;
 import com.plainprog.grandslam_ai.object.request_models.gallery.CreateGalleryGroupRequest;
 import com.plainprog.grandslam_ai.object.request_models.gallery.GroupsChangeOrderRequest;
 import com.plainprog.grandslam_ai.object.request_models.gallery.UpdateGalleryRequest;
-import com.plainprog.grandslam_ai.service.account.helper.TestUserHelper;
+import com.plainprog.grandslam_ai.service.account.helper.TestHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,14 +24,14 @@ public class GalleryTests extends BaseEndpointTest {
     @Autowired
     private GalleryGroupRepository galleryGroupRepository;
     @Autowired
-    private TestUserHelper testUserHelper;
+    private TestHelper testHelper;
 
     private Account testAccount;
 
     @BeforeEach
     public void setUp() throws Exception {
         // Ensure test user exists
-        testAccount = testUserHelper.ensureTestUserExists();
+        testAccount = testHelper.ensureTestUserExists().getAccount();
     }
 
     @Test

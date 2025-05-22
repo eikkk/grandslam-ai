@@ -1,9 +1,9 @@
 package com.plainprog.grandslam_ai.auth;
 
 import com.plainprog.grandslam_ai.config.TestConfig;
-import com.plainprog.grandslam_ai.entity.account.Account;
+import com.plainprog.grandslam_ai.object.dto.auth.AccountWithPasswordDTO;
 import com.plainprog.grandslam_ai.object.request_models.auth.LoginRequest;
-import com.plainprog.grandslam_ai.service.account.helper.TestUserHelper;
+import com.plainprog.grandslam_ai.service.account.helper.TestHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,26 +24,25 @@ public class LoginTest {
 
     @Value("${app.url.base}")
     private String baseUrl;
-    @Value("${app.test.account.email}")
-    private String testEmail;
-    @Value("${app.test.account.password}")
-    private String testPassword;
     @Autowired
     private TestRestTemplate restTemplate;
     @Autowired
-    private TestUserHelper testUserHelper;
+    private TestHelper testHelper;
+
+    private AccountWithPasswordDTO testAcc;
+
 
     @BeforeEach
     public void setUpTestUser() {
         //Ensure test acc exist is not verified and the email token does not exist
-        Account account = testUserHelper.ensureTestUserExists();
-        assertNotNull(account);
+        testAcc = testHelper.ensureTestUserExists();
+        assertNotNull(testAcc);
     }
     @Test
     public void testLogin() throws Exception {
         try{
             // Verify that wrong password fails
-            LoginRequest loginRequest = new LoginRequest(testEmail, "wrongpassword");
+            LoginRequest loginRequest = new LoginRequest(testAcc.getAccount().getEmail(), "wrongpassword");
             ResponseEntity<String> responseEntity =
                     restTemplate.postForEntity(baseUrl + "/api/auth/login", loginRequest, String.class);
 
@@ -51,7 +50,7 @@ public class LoginTest {
             assertEquals(HttpStatus.UNAUTHORIZED, responseEntity.getStatusCode());
 
             // Verify that correct password succeeds
-            loginRequest = new LoginRequest(testEmail, testPassword);
+            loginRequest = new LoginRequest(testAcc.getAccount().getEmail(), testAcc.getPassword());
             responseEntity =
                     restTemplate.postForEntity(baseUrl + "/api/auth/login", loginRequest, String.class);
 

@@ -7,11 +7,10 @@ import com.plainprog.grandslam_ai.entity.account_security.AccountSecurity;
 import com.plainprog.grandslam_ai.entity.account_security.AccountSecurityRepository;
 import com.plainprog.grandslam_ai.object.dto.util.OperationResultDTO;
 import com.plainprog.grandslam_ai.service.account.AccountService;
-import com.plainprog.grandslam_ai.service.account.helper.TestUserHelper;
+import com.plainprog.grandslam_ai.service.account.helper.TestHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
 
@@ -23,8 +22,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class EmailVerificationTest extends BaseEndpointTest {
 
-    @Value("${app.test.account.email}")
-    private String testEmail;
     @Autowired
     private TestRestTemplate restTemplate;
     @Autowired
@@ -34,12 +31,14 @@ public class EmailVerificationTest extends BaseEndpointTest {
     @Autowired
     private AccountService accountService;
     @Autowired
-    private TestUserHelper testUserHelper;
+    private TestHelper testHelper;
+
+    private Account testAcc;
 
     @BeforeEach
     public void setUpTestUser() {
         //Ensure test acc exist is not verified and the email token does not exist
-        Account testAcc = testUserHelper.ensureTestUserExistAndNotVerified();
+        testAcc = testHelper.ensureTestUserExistAndNotVerified();
         assertNotNull(testAcc);
         assertFalse(testAcc.getEmailVerified());
     }
@@ -56,7 +55,7 @@ public class EmailVerificationTest extends BaseEndpointTest {
             // Test if the endpoint returns a 200 OK status
             testAuthenticatedRequest(url, method, null, responseType);
 
-            account = accountService.getAccountByEmail(testEmail);
+            account = accountService.getAccountByEmail(testAcc.getEmail());
             // Email verification token gets generated
             AccountSecurity accountSecurity = accountSecurityRepository.findByAccountId(account.getId());
             assertNotNull(accountSecurity);

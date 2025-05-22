@@ -2,7 +2,7 @@ package com.plainprog.grandslam_ai;
 
 
 import com.plainprog.grandslam_ai.config.TestConfig;
-import com.plainprog.grandslam_ai.service.account.helper.TestUserHelper;
+import com.plainprog.grandslam_ai.service.account.helper.TestHelper;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @ContextConfiguration(classes = {TestConfig.class})
 public abstract class BaseEndpointTest {
     @Autowired
-    private TestUserHelper testUserHelper;
+    private TestHelper testHelper;
     @Value("${app.url.base}")
     protected String baseUrl;
 
@@ -50,7 +50,7 @@ public abstract class BaseEndpointTest {
      * @param requestBody The request body to send (can be null for GET).
      */
     protected ResponseEntity<?> testAuthenticatedRequest(String url, HttpMethod method, Object requestBody, Class<?> responseType) {
-        HttpHeaders headersWithAuth = testUserHelper.initiateSession();
+        HttpHeaders headersWithAuth = testHelper.initiateSession();
         headersWithAuth.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
         HttpEntity<Object> entity = new HttpEntity<>(requestBody, headersWithAuth);
 
@@ -68,7 +68,7 @@ public abstract class BaseEndpointTest {
      * @param responseType The expected response type.
      */
     protected void testForPositiveExpectedError(String url, HttpMethod method, Object requestBody, Class<?> responseType) {
-        HttpHeaders headersWithAuth = testUserHelper.initiateSession();
+        HttpHeaders headersWithAuth = testHelper.initiateSession();
         headersWithAuth.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
         HttpEntity<Object> entity = new HttpEntity<>(requestBody, headersWithAuth);
 

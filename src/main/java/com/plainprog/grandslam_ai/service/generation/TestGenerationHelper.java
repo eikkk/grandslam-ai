@@ -1,17 +1,14 @@
 package com.plainprog.grandslam_ai.service.generation;
 
 import com.plainprog.grandslam_ai.entity.account.Account;
-import com.plainprog.grandslam_ai.entity.img_gen.ImgGenModule;
 import com.plainprog.grandslam_ai.helper.generation.Prompts;
 import com.plainprog.grandslam_ai.object.constant.images.ImgGenModuleId;
 import com.plainprog.grandslam_ai.object.request_models.generation.ImgGenRequest;
 import com.plainprog.grandslam_ai.object.response_models.generation.ImgGenModuleModel;
 import com.plainprog.grandslam_ai.object.response_models.generation.ImgGenResponse;
-import com.plainprog.grandslam_ai.service.account.helper.TestUserHelper;
+import com.plainprog.grandslam_ai.service.account.helper.TestHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class TestGenerationHelper {
@@ -20,7 +17,7 @@ public class TestGenerationHelper {
     @Autowired
     private GenerationModulesService generationModulesService;
     @Autowired
-    private TestUserHelper testUserHelper;
+    private TestHelper testHelper;
     public ImgGenResponse produceTestUserImage() throws Exception {
         var modules = generationModulesService.getActiveModules().getGroups()
                 .stream()
@@ -32,7 +29,7 @@ public class TestGenerationHelper {
             throw new RuntimeException("No test module found");
         }
         ImgGenRequest imgGenRequest = new ImgGenRequest(Prompts.testPrompt, "s", testModule.getProvider().getId(), testModule.getId());
-        Account testUser = testUserHelper.ensureTestUserExists();
+        Account testUser = testHelper.ensureTestUserExists().getAccount();
         return imageGenerationService.generateImage(imgGenRequest, testUser, false, 0, testModule.getProvider().getId());
     }
 }

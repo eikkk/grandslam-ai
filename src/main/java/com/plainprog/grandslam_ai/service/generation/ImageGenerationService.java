@@ -28,6 +28,7 @@ import java.time.Instant;
 
 @Service
 public class ImageGenerationService {
+    public static final int BASE_IMAGE_ELO = 1000;
     public static final int BASE_SIZE = 1280;
     public static final int BASE_SIZE_LONGER = 1536;
     public static final int BASE_SIZE_SHORTER = 864;
@@ -127,6 +128,7 @@ public class ImageGenerationService {
         dbImage.setImgGenProvider(provider);
         dbImage.setCreatorAccount(account);
         dbImage.setOwnerAccount(account);
+        dbImage.setElo(BASE_IMAGE_ELO);
         //create incubator entry
         IncubatorEntry incubatorEntry = new IncubatorEntry(dbImage,false);
         incubatorEntryRepository.save(incubatorEntry);

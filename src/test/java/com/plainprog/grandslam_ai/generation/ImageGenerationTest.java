@@ -12,11 +12,11 @@ import com.plainprog.grandslam_ai.object.constant.images.ProviderId;
 import com.plainprog.grandslam_ai.object.request_models.generation.ImgGenRequest;
 import com.plainprog.grandslam_ai.object.request_models.generation.SeedRegenRequest;
 import com.plainprog.grandslam_ai.object.response_models.generation.ImgGenResponse;
-import com.plainprog.grandslam_ai.service.account.helper.TestUserHelper;
+import com.plainprog.grandslam_ai.service.account.helper.TestHelper;
 import com.plainprog.grandslam_ai.service.generation.ImageGenerationService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
 
@@ -31,11 +31,19 @@ public class ImageGenerationTest extends BaseEndpointTest {
     @Autowired
     private TestRestTemplate restTemplate;
     @Autowired
-    private TestUserHelper testUserHelper;
+    private TestHelper testHelper;
     @Autowired
     private ImageRepository imageRepository;
     @Autowired
     private IncubatorEntryRepository incubatorEntryRepository;
+
+    private Account acc;
+
+    @BeforeEach
+    public void setUp() {
+        // Ensure the test user exists before each test
+        acc = testHelper.ensureTestUserExists().getAccount();
+    }
 
     @Test
     public void imageGenerationEndpointTest() throws Exception {
@@ -62,18 +70,17 @@ public class ImageGenerationTest extends BaseEndpointTest {
     public void imageRegenerationTest() throws Exception {
         HttpMethod method = HttpMethod.POST;
         Class<?> responseType = ImgGenResponse.class;
-        Account acc = testUserHelper.ensureTestUserExists();
         //Given
-        Optional<Image> testImage = imageRepository.findFirstByOwnerAccountId(acc.getId());
+        Image testImage = testHelper.ensureImageExists(acc);
         Optional<Image> imageOfOtherOwner = imageRepository.findFirstByOwnerAccountIdNot(acc.getId());
 
-        assertTrue(testImage.isPresent());
+        assertNotNull(testImage, "Test image should not be null");
         assertTrue(imageOfOtherOwner.isPresent());
-        assertNotNull(testImage.get().getPrompt());
+        assertNotNull(testImage.getPrompt());
         assertNotNull(imageOfOtherOwner.get().getNegativePrompt());
         assertNotNull(imageOfOtherOwner.get().getPrompt());
 
-        String url = baseUrl + "/api/gen/image/" + testImage.get().getId() + "/regen";
+        String url = baseUrl + "/api/gen/image/" + testImage.getId() + "/regen";
 
         //test that endpoint is protected by authentication
         testEndpointProtection(url, method, null, responseType);
@@ -85,7 +92,7 @@ public class ImageGenerationTest extends BaseEndpointTest {
 
         var imageDB = imageRepository.findById(responseBody.getImageId()).orElse(null);
         assertNotNull(imageDB, "Image should exist in the database");
-        assertEquals(imageDB.getOwnerAccount().getId(), testUserHelper.ensureTestUserExists().getId(), "Wrong image owner");
+        assertEquals(imageDB.getOwnerAccount().getId(), acc.getId(), "Wrong image owner");
 
         //Try to request regeneration of image of other owner
         String urlOtherOwner = baseUrl + "/api/gen/image/" + imageOfOtherOwner.get().getId() + "/regen";
@@ -98,21 +105,20 @@ public class ImageGenerationTest extends BaseEndpointTest {
         HttpMethod method = HttpMethod.POST;
         Class<?> responseType = ImgGenResponse.class;
 
-        Account acc = testUserHelper.ensureTestUserExists();
-        Optional<Image> testImage = imageRepository.findFirstByOwnerAccountId(acc.getId());
+        Image testImage = testHelper.ensureImageExists(acc);
         Optional<Image> imageOfOtherOwner = imageRepository.findFirstByOwnerAccountIdNot(acc.getId());
 
-        assertTrue(testImage.isPresent(), "Test image not found");
+        assertNotNull(testImage, "Test image should not be null");
         assertTrue(imageOfOtherOwner.isPresent(), "Image of other owner not found");
-        assertNotNull(testImage.get().getPrompt(), "Test image prompt is null");
+        assertNotNull(testImage.getPrompt(), "Test image prompt is null");
         assertNotNull(imageOfOtherOwner.get().getNegativePrompt(), "Other owner's image negative prompt is null");
         assertNotNull(imageOfOtherOwner.get().getPrompt(), "Other owner's image prompt is null");
 
         // Form request
-        SeedRegenRequest request = new SeedRegenRequest(testImage.get().getPrompt());
+        SeedRegenRequest request = new SeedRegenRequest(testImage.getPrompt());
 
         // Test that endpoint is protected by authentication
-        String url = String.format(urlTemplate, testImage.get().getId());
+        String url = String.format(urlTemplate, testImage.getId());
         testEndpointProtection(url, method, request, responseType);
 
         // Test authenticated request
@@ -124,7 +130,7 @@ public class ImageGenerationTest extends BaseEndpointTest {
         // Validate image in the database
         Image imageDB = imageRepository.findById(responseBody.getImageId()).orElse(null);
         assertNotNull(imageDB, "Image should exist in the database");
-        assertEquals(testImage.get().getSeed(), imageDB.getSeed(), "Seed should match the original image");
+        assertEquals(testImage.getSeed(), imageDB.getSeed(), "Seed should match the original image");
         assertEquals(imageDB.getOwnerAccount().getId(), acc.getId(), "Wrong image owner");
 
         // Try to request regeneration of image of another owner
@@ -159,7 +165,7 @@ public class ImageGenerationTest extends BaseEndpointTest {
         assertNotNull(imageDB.getNegativePrompt(), "Image negative prompt should not be null");
         assertNotNull(imageDB.getSeed(), "Image generation module should not be null");
         assertNotNull(imageDB.getSteps(), "Image generation module should not be null");
-        assertEquals(imageDB.getOwnerAccount().getId(), testUserHelper.ensureTestUserExists().getId(), "Wrong image owner");
+        assertEquals(imageDB.getOwnerAccount().getId(), acc.getId(), "Wrong image owner");
 
         // Validate incubator entry
         IncubatorEntry incubatorEntry = incubatorEntryRepository.findByImageId(imageId);
