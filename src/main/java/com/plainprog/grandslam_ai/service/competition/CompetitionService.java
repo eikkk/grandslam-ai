@@ -175,7 +175,7 @@ public class CompetitionService {
      *
      * @return OpenCompetitionsResponse containing open and upcoming competitions
      */
-    public OpenCompetitionsResponse getOpenCompetitions() {
+    public OpenCompetitionsResponse getOpenCompetitions(Account account) {
         List<Competition> openCompetitions = competitionRepository.findAllByStatus(Competition.CompetitionStatus.OPEN);
         List<CompetitionQueue> upcomingQueue = competitionQueueRepository.findAllByStatus(CompetitionQueue.CompetitionQueueStatus.NEW);
 
@@ -183,8 +183,11 @@ public class CompetitionService {
                 .map(Competition::getId)
                 .toList();
 
-        List<CompetitionSubmissionsCount> submissionCounts = submissionRepository.findCompetitionSubmissionCountsByCompetitionIds(competitionIds);
+        // Get the submissions that account has made to the open competitions
+        List<CompetitionSubmission> mySubmissions = submissionRepository.findAllByAccountIdAndCompetitionIdIn(account.getId(), competitionIds);
 
+        // Gen total number of submissions into each competition
+        List<CompetitionSubmissionsCount> submissionCounts = submissionRepository.findCompetitionSubmissionCountsByCompetitionIds(competitionIds);
 
         List<OpenCompetitionItemModel> openCompetitionItems = new ArrayList<>();
         for (Competition competition : openCompetitions) {
@@ -193,7 +196,10 @@ public class CompetitionService {
                     .map(CompetitionSubmissionsCount::getSubmissionCount)
                     .findFirst()
                     .orElse(0L);
-            OpenCompetitionItemModel item = CompetitionMappers.mapToOpenCompetitionItemModel(competition, (int) submissionCount);
+            List<CompetitionSubmission> mySubmissionsForCompetition = mySubmissions.stream()
+                    .filter(submission -> submission.getCompetition().getId().equals(competition.getId()))
+                    .toList();
+            OpenCompetitionItemModel item = CompetitionMappers.mapToOpenCompetitionItemModel(competition, (int) submissionCount, mySubmissionsForCompetition);
             openCompetitionItems.add(item);
         }
 

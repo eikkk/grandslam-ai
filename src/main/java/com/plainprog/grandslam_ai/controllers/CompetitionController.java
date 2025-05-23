@@ -72,8 +72,9 @@ public class CompetitionController {
      */
     @GetMapping("/open")
     public ResponseEntity<OpenCompetitionsResponse> getOpenCompetitions() {
+        Account account = SessionDataHolder.getPayload().getAccount();
         try {
-            OpenCompetitionsResponse result = competitionService.getOpenCompetitions();
+            OpenCompetitionsResponse result = competitionService.getOpenCompetitions(account);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             System.err.println("Error while fetching open competitions: " + e.getMessage());

@@ -29,4 +29,6 @@ public interface CompetitionSubmissionRepository extends JpaRepository<Competiti
             "GROUP BY cs.competition.id")
     List<CompetitionSubmissionsCount> findCompetitionSubmissionCountsByCompetitionIds(@Param("competitionIds") List<Long> competitionIds);
 
+    List<CompetitionSubmission> findAllByAccountIdAndCompetitionIdIn(Long accountId, List<Long> competitionIds);
+
 }
