@@ -26,6 +26,7 @@ import java.util.List;
 @Service
 public class CompetitionService {
     private final int VOTING_QUEUE_CHUNK_SIZE = 6;
+    private final int MAX_ALLOWED_COMP_SUBMISSIONS_PER_ACCOUNT = 2;
 
 
     @Autowired
@@ -82,7 +83,6 @@ public class CompetitionService {
             return new OperationResultDTO(OperationOutcome.FAILURE, "Competition is not open for submissions", null);
         }
 
-
         // Check if max competitors limit is reached
         int currentCompetitors = submissionRepository.countByCompetitionIdWithLock(competition.getId());
         if (currentCompetitors >= competition.getParticipantsCount()) {
@@ -96,6 +96,18 @@ public class CompetitionService {
         if (!image.getOwnerAccount().equals(account)){
             return new OperationResultDTO(OperationOutcome.FAILURE,
                     "You are not the owner of this image", null);
+        }
+
+        // Get already submitted by this account images
+        List<CompetitionSubmission> alreadySubmitted = submissionRepository.findAllByAccountIdAndCompetitionId(account.getId(), competition.getId());
+        if (alreadySubmitted.size() >= MAX_ALLOWED_COMP_SUBMISSIONS_PER_ACCOUNT) {
+            return new OperationResultDTO(OperationOutcome.FAILURE, "You have already submitted the maximum number of images to this competition", null);
+        }
+        // Check if given image is already submitted
+        for (CompetitionSubmission submission : alreadySubmitted) {
+            if (submission.getImage().getId().equals(image.getId())) {
+                return new OperationResultDTO(OperationOutcome.FAILURE, "You have already submitted this image to the competition", null);
+            }
         }
 
         // Create submission
