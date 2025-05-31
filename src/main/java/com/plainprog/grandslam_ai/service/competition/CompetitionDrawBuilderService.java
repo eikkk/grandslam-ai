@@ -99,7 +99,6 @@ public class CompetitionDrawBuilderService {
         return CompletableFuture.completedFuture(null);
     }
 
-    @Async
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public void processMatchResult(CompetitionMatch match) {
         if (match.getNextMatch() != null) {

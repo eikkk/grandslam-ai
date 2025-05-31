@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.List;
 
 public interface CompetitionMatchRepository extends JpaRepository<CompetitionMatch, Long> {
@@ -33,4 +34,18 @@ public interface CompetitionMatchRepository extends JpaRepository<CompetitionMat
             @Param("excludeAccountId") Long excludeAccountId,
             Pageable pageable
     );
+
+    /**
+     * Finds matches where:
+     * 1. The voting deadline has passed
+     * 2. No winner has been selected yet
+     * 3. Both submissions are available
+     */
+    @Query("SELECT m FROM CompetitionMatch m " +
+           "WHERE m.winnerSubmission IS NULL " +
+           "AND m.submission1 IS NOT NULL " +
+           "AND m.submission2 IS NOT NULL " +
+           "AND m.voteDeadline < :currentTime " +
+           "ORDER BY m.voteDeadline ASC")
+    List<CompetitionMatch> findUnprocessedMatchesWithExpiredDeadlines(@Param("currentTime") Instant currentTime);
 }

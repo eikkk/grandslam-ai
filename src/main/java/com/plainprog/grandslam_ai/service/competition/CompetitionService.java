@@ -302,38 +302,10 @@ public class CompetitionService {
 
         // Check if we should finish the match based on deadline
         boolean isPastDeadline = match.getVoteDeadline().compareTo(Instant.now()) < 0;
-        if (isPastDeadline) {
-            finishMatchIfClear(match);
-        } else {
-            // Check if we should finish the match based on vote target
-            // Get vote counts for both submissions in a single query
-            List<SubmissionVoteCountDTO> voteCounts = matchVoteRepository.countVotesBySubmissionForMatchWithLock(matchId);
-            
-            // Get submission IDs for easier reference
-            Long sub1Id = match.getSubmission1().getId();
-            Long sub2Id = match.getSubmission2().getId();
-            
-            // Find vote counts for each submission
-            long votes1 = findVoteCount(voteCounts, sub1Id);
-            long votes2 = findVoteCount(voteCounts, sub2Id);
-            
-            // Check if either submission has reached the vote target
-            if (votes1 >= match.getVoteTarget() || votes2 >= match.getVoteTarget()) {
-                // Only finish if there's a clear winner (no tie)
-                if (votes1 != votes2) {
-                    CompetitionSubmission winnerSubmission = (votes1 > votes2) ? match.getSubmission1() : match.getSubmission2();
-                    match.setWinnerSubmission(winnerSubmission);
-                    match.setFinishedAt(Instant.now());
-                    match = competitionMatchRepository.save(match);
-                    competitionDrawBuilderService.processMatchResult(match);
-                }
-                // If there's a tie, we don't finish the match and wait for the next vote
-            }
-        }
+        checkMatchVotesAndFinishIfClear(match, !isPastDeadline);
 
         return new OperationResultDTO(OperationOutcome.SUCCESS, "Vote submitted successfully", null);
     }
-    
     /**
      * Helper method to find the vote count for a specific submission from a list of vote counts
      */
@@ -346,10 +318,14 @@ public class CompetitionService {
     }
     
     /**
-     * Helper method to determine the winner of a match based on vote counts and finish the match
-     * if there is a clear winner (no tie)
+     * Checks vote counts for a match and finishes it if there's a clear winner
+     * 
+     * @param match The match to check and potentially finish
+     * @param checkVoteTarget Whether to check if vote target has been reached
+     * @return true if the match was finished, false otherwise
      */
-    private void finishMatchIfClear(CompetitionMatch match) {
+    @Transactional(isolation = Isolation.SERIALIZABLE)
+    public boolean checkMatchVotesAndFinishIfClear(CompetitionMatch match, boolean checkVoteTarget) {
         // Get vote counts for both submissions in a single query
         List<SubmissionVoteCountDTO> voteCounts = matchVoteRepository.countVotesBySubmissionForMatchWithLock(match.getId());
         
@@ -361,15 +337,20 @@ public class CompetitionService {
         long votes1 = findVoteCount(voteCounts, sub1Id);
         long votes2 = findVoteCount(voteCounts, sub2Id);
         
-        // Only finish if there's a clear winner (no tie)
-        if (votes1 != votes2) {
-            CompetitionSubmission winnerSubmission = (votes1 > votes2) ? match.getSubmission1() : match.getSubmission2();
-            match.setWinnerSubmission(winnerSubmission);
-            match.setFinishedAt(Instant.now());
-            match = competitionMatchRepository.save(match);
-            competitionDrawBuilderService.processMatchResult(match);
+        // Only proceed if there's a vote target requirement and it's been met, or if we're not checking vote target
+        if (!checkVoteTarget || votes1 >= match.getVoteTarget() || votes2 >= match.getVoteTarget()) {
+            // Only finish if there's a clear winner (no tie)
+            if (votes1 != votes2) {
+                CompetitionSubmission winnerSubmission = (votes1 > votes2) ? match.getSubmission1() : match.getSubmission2();
+                match.setWinnerSubmission(winnerSubmission);
+                match.setFinishedAt(Instant.now());
+                match = competitionMatchRepository.save(match);
+                competitionDrawBuilderService.processMatchResult(match);
+                return true;
+            }
         }
-        // If there's a tie when past deadline, we still don't finish and wait for the next vote to break the tie
+        // If there's a tie or vote target not reached, we don't finish the match
+        return false;
     }
 
     /**
