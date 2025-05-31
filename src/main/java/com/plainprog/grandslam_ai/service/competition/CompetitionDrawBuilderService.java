@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class CompetitionDrawBuilderService {
@@ -25,7 +26,7 @@ public class CompetitionDrawBuilderService {
 
     @Async
     @Transactional(isolation = Isolation.SERIALIZABLE)
-    public void buildCompetitionDraw(Competition competition) {
+    public CompletableFuture<Void> buildCompetitionDraw(Competition competition) {
         //verify there are no matches already
         if (competitionMatchRepository.countByCompetitionId(competition.getId()) > 0) {
             throw new RuntimeException("Matches already exist for this competition");
@@ -47,6 +48,9 @@ public class CompetitionDrawBuilderService {
 
         // Get all submissions for this competition
         List<CompetitionSubmission> submissions = competitionSubmissionRepository.findAllByCompetitionId(competition.getId());
+        if (submissions.size() != participantsCount){
+            throw new RuntimeException("Number of participants mismatch with number of submissions");
+        }
         // Order submissions by image ELO
         submissions.sort((s1, s2) -> Integer.compare(s2.getImage().getElo(), s1.getImage().getElo()));
 
@@ -79,6 +83,9 @@ public class CompetitionDrawBuilderService {
                     match.setSubmission1(submissions.get(submissionIndex1));
                     match.setSubmission2(submissions.get(submissionIndex2));
                     match.setStartedAt(Instant.now());
+
+                    Instant voteDeadline = Instant.now().plusSeconds(VOTE_DEADLINE_HOURS * 3600);
+                    match.setVoteDeadline(voteDeadline);
                 }
 
                 // Save the match to the database
@@ -87,6 +94,9 @@ public class CompetitionDrawBuilderService {
                 competitionMap.computeIfAbsent(round, k -> new ArrayList<>()).add(match);
             }
         }
+        // Mark competition as running
+        competition.setStatus(Competition.CompetitionStatus.RUNNING);
+        return CompletableFuture.completedFuture(null);
     }
 
     @Async
@@ -106,12 +116,12 @@ public class CompetitionDrawBuilderService {
                 } else {
                     nextMatch.setSubmission2(winnerSubmission);
                 }
-                // determine vote deadline
-                Instant voteDeadline = Instant.now().plusSeconds(VOTE_DEADLINE_HOURS * 3600);
-                nextMatch.setVoteDeadline(voteDeadline);
                 // if both competitors are in the match, set started at
                 if (nextMatch.getSubmission1() != null && nextMatch.getSubmission2() != null) {
                     nextMatch.setStartedAt(Instant.now());
+                    // determine vote deadline
+                    Instant voteDeadline = Instant.now().plusSeconds(VOTE_DEADLINE_HOURS * 3600);
+                    nextMatch.setVoteDeadline(voteDeadline);
                 }
                 // Save the next match
                 competitionMatchRepository.save(nextMatch);

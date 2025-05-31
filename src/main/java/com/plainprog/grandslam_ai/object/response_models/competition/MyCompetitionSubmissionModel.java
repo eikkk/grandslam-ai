@@ -7,6 +7,9 @@ public class MyCompetitionSubmissionModel {
     private long imageId;
     private ImageDTO image;
 
+    public MyCompetitionSubmissionModel() {
+    }
+
     public MyCompetitionSubmissionModel(long submissionId, long imageId, ImageDTO image) {
         this.submissionId = submissionId;
         this.imageId = imageId;

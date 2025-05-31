@@ -10,6 +10,9 @@ public class OpenCompetitionItemModel {
     private int themeId;
     private List<MyCompetitionSubmissionModel> mySubmissions;
 
+    public OpenCompetitionItemModel() {
+    }
+
     public OpenCompetitionItemModel(long id, String name, int capacity, int currentParticipants, int themeId, List<MyCompetitionSubmissionModel> mySubmissions) {
         this.id = id;
         this.name = name;

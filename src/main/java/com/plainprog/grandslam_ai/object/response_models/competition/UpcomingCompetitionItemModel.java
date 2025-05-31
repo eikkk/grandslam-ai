@@ -4,6 +4,9 @@ public class UpcomingCompetitionItemModel {
     private Integer themeId;
     private String name;
 
+    public UpcomingCompetitionItemModel() {
+    }
+
     public UpcomingCompetitionItemModel(Integer themeId, String name) {
         this.themeId = themeId;
         this.name = name;

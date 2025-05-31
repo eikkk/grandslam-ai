@@ -7,6 +7,11 @@ public class SubmissionRequest {
     public SubmissionRequest() {
     }
 
+    public SubmissionRequest(Long galleryEntryId, Long competitionId) {
+        this.galleryEntryId = galleryEntryId;
+        this.competitionId = competitionId;
+    }
+
     public Long getGalleryEntryId() {
         return galleryEntryId;
     }

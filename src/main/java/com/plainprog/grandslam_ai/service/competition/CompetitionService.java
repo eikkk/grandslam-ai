@@ -6,6 +6,9 @@ import com.plainprog.grandslam_ai.entity.competitions.projections.CompetitionSub
 import com.plainprog.grandslam_ai.entity.img_gen.Image;
 import com.plainprog.grandslam_ai.entity.img_management.GalleryEntry;
 import com.plainprog.grandslam_ai.entity.img_management.GalleryEntryRepository;
+import com.plainprog.grandslam_ai.object.dto.competition.ImageCompetitionComplianceDTO;
+import com.plainprog.grandslam_ai.object.dto.competition.ImagesCompetitionComplianceDTO;
+import com.plainprog.grandslam_ai.object.dto.competition.SubmissionVoteCountDTO;
 import com.plainprog.grandslam_ai.object.dto.util.OperationOutcome;
 
 import com.plainprog.grandslam_ai.object.dto.util.OperationResultDTO;
@@ -25,8 +28,8 @@ import java.util.List;
 
 @Service
 public class CompetitionService {
-    private final int VOTING_QUEUE_CHUNK_SIZE = 6;
-    private final int MAX_ALLOWED_COMP_SUBMISSIONS_PER_ACCOUNT = 2;
+    public final int VOTING_QUEUE_CHUNK_SIZE = 6;
+    public final int MAX_ALLOWED_COMP_SUBMISSIONS_PER_ACCOUNT = 2;
 
 
     @Autowired
@@ -71,6 +74,29 @@ public class CompetitionService {
     public Competition saveCompetition(Competition competition) {
         return competitionRepository.save(competition);
     }
+    public Competition getCompetitionById(Long id) {
+        return competitionRepository.findById(id).orElse(null);
+    }
+    public CompetitionTheme getCompetitionThemeById(Integer id) {
+        return competitionThemeRepository.findById(id).orElse(null);
+    }
+    public List<Competition> getCompetitionsByStatus(Competition.CompetitionStatus status) {
+        return competitionRepository.findAllByStatus(status);
+    }
+    //get by status and theme group id
+    public List<Competition> getCompetitionsByStatusAndThemeGroupId(Competition.CompetitionStatus status, Integer themeGroupId) {
+        return competitionRepository.findAllByStatusAndThemeGroupId(status, themeGroupId);
+    }
+    /**
+     * Submits an image to a competition.
+     * This method handles the submission process, including checking if the competition is open,
+     * if the image complies with the competition requirements, and if the user has already submitted the maximum allowed images.
+     * or if the image is already submitted.
+     *
+     * @param request  The submission request containing the competition ID and gallery entry ID
+     * @param account  The account of the user submitting the image
+     * @return OperationResultDTO indicating success or failure
+     */
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public OperationResultDTO submitToCompetition(SubmissionRequest request, Account account) {
         // Use pessimistic locking to prevent concurrent modifications
@@ -98,6 +124,17 @@ public class CompetitionService {
                     "You are not the owner of this image", null);
         }
 
+        // check if the image is not hidden
+        if (galleryEntry.getHiddenAt() != null) {
+            return new OperationResultDTO(OperationOutcome.FAILURE, "Image is hidden from gallery and cannot be submitted to competition", null);
+        }
+
+        // Validate that image complies with competition theme
+        ImageCompetitionComplianceDTO compliance = isImageCompliesWithCompetitionTheme(galleryEntry, competition);
+        if (!compliance.isCompliant()) {
+            return new OperationResultDTO(OperationOutcome.FAILURE, compliance.getReason(), null);
+        }
+
         // Get already submitted by this account images
         List<CompetitionSubmission> alreadySubmitted = submissionRepository.findAllByAccountIdAndCompetitionId(account.getId(), competition.getId());
         if (alreadySubmitted.size() >= MAX_ALLOWED_COMP_SUBMISSIONS_PER_ACCOUNT) {
@@ -122,18 +159,29 @@ public class CompetitionService {
         if (currentCompetitors >= competition.getParticipantsCount()) {
             // Start the competition
             competition.setStatus(Competition.CompetitionStatus.STARTED);
-            competition = competitionRepository.save(competition);
-
-            try {
-                // Build the competition draw asynchronously
-                competitionDrawBuilderService.buildCompetitionDraw(competition);
-            } catch (Exception e) {
-                // Handle the exception (e.g., log it)
-                System.out.println("Error while building competition draw: " + e.getMessage());
-            }
+            competitionRepository.save(competition);
         }
 
         return new OperationResultDTO(OperationOutcome.SUCCESS, "Successfully submitted to competition", null);
+    }
+    /**
+     * Checks if the image complies with the competition requirements.
+     * Currently, that means if the image's module matches the competition theme's module.
+     *
+     * @param galleryEntry The gallery entry containing the image
+     * @param competition  The competition to check against
+     * @return ImageCompetitionComplianceDTO indicating compliance status and reason
+     */
+    private ImageCompetitionComplianceDTO isImageCompliesWithCompetitionTheme(GalleryEntry galleryEntry, Competition competition) {
+        var requiredModuleId = competition.getTheme().getModule().getId();
+        var imageModuleId = galleryEntry.getImage().getImgGenModule().getId();
+        boolean complies =  requiredModuleId.equals(imageModuleId);
+        String reason = "";
+        if (!complies){
+            String moduleName = competition.getTheme().getModule().getName();
+            reason = "Required image of " + moduleName + " type.";
+        }
+        return new ImageCompetitionComplianceDTO(galleryEntry, complies, reason);
     }
     /**
      * Quits the competition for the given account.
@@ -239,7 +287,6 @@ public class CompetitionService {
             return new OperationResultDTO(OperationOutcome.FAILURE, "You have already voted for this match", null);
         }
 
-
         CompetitionSubmission votedSubmission = null;
         if (match.getSubmission1().getId().equals(submissionId)) {
             votedSubmission = match.getSubmission1();
@@ -249,32 +296,90 @@ public class CompetitionService {
             return new OperationResultDTO(OperationOutcome.FAILURE, "Invalid submission ID", null);
         }
 
-        boolean shouldFinishMatch = false;
-        boolean isPastDeadline = match.getVoteDeadline().compareTo(Instant.now()) < 0;
-        if (isPastDeadline) {
-            shouldFinishMatch = true;
-        } else {
-            // Check if the match is already finished
-            long votesCount = matchVoteRepository.countByMatchIdAndSubmissionIdWithLock(matchId, submissionId);
-            if (votesCount + 1 >= match.getVoteTarget()) {
-                shouldFinishMatch = true;
-            }
-        }
-
+        // Save the vote first
         MatchVote vote = new MatchVote(account, match, votedSubmission);
         matchVoteRepository.save(vote);
 
-        if (shouldFinishMatch) {
-            // Set the winner submission
-            match.setWinnerSubmission(votedSubmission);
-            match.setFinishedAt(Instant.now());
-            match = competitionMatchRepository.save(match);
-            competitionDrawBuilderService.processMatchResult(match);
+        // Check if we should finish the match based on deadline
+        boolean isPastDeadline = match.getVoteDeadline().compareTo(Instant.now()) < 0;
+        if (isPastDeadline) {
+            finishMatchIfClear(match);
+        } else {
+            // Check if we should finish the match based on vote target
+            // Get vote counts for both submissions in a single query
+            List<SubmissionVoteCountDTO> voteCounts = matchVoteRepository.countVotesBySubmissionForMatchWithLock(matchId);
+            
+            // Get submission IDs for easier reference
+            Long sub1Id = match.getSubmission1().getId();
+            Long sub2Id = match.getSubmission2().getId();
+            
+            // Find vote counts for each submission
+            long votes1 = findVoteCount(voteCounts, sub1Id);
+            long votes2 = findVoteCount(voteCounts, sub2Id);
+            
+            // Check if either submission has reached the vote target
+            if (votes1 >= match.getVoteTarget() || votes2 >= match.getVoteTarget()) {
+                // Only finish if there's a clear winner (no tie)
+                if (votes1 != votes2) {
+                    CompetitionSubmission winnerSubmission = (votes1 > votes2) ? match.getSubmission1() : match.getSubmission2();
+                    match.setWinnerSubmission(winnerSubmission);
+                    match.setFinishedAt(Instant.now());
+                    match = competitionMatchRepository.save(match);
+                    competitionDrawBuilderService.processMatchResult(match);
+                }
+                // If there's a tie, we don't finish the match and wait for the next vote
+            }
         }
 
         return new OperationResultDTO(OperationOutcome.SUCCESS, "Vote submitted successfully", null);
     }
+    
+    /**
+     * Helper method to find the vote count for a specific submission from a list of vote counts
+     */
+    private long findVoteCount(List<SubmissionVoteCountDTO> voteCounts, Long submissionId) {
+        return voteCounts.stream()
+                .filter(vc -> vc.getSubmissionId().equals(submissionId))
+                .map(SubmissionVoteCountDTO::getVoteCount)
+                .findFirst()
+                .orElse(0L);
+    }
+    
+    /**
+     * Helper method to determine the winner of a match based on vote counts and finish the match
+     * if there is a clear winner (no tie)
+     */
+    private void finishMatchIfClear(CompetitionMatch match) {
+        // Get vote counts for both submissions in a single query
+        List<SubmissionVoteCountDTO> voteCounts = matchVoteRepository.countVotesBySubmissionForMatchWithLock(match.getId());
+        
+        // Get submission IDs for easier reference
+        Long sub1Id = match.getSubmission1().getId();
+        Long sub2Id = match.getSubmission2().getId();
+        
+        // Find vote counts for each submission
+        long votes1 = findVoteCount(voteCounts, sub1Id);
+        long votes2 = findVoteCount(voteCounts, sub2Id);
+        
+        // Only finish if there's a clear winner (no tie)
+        if (votes1 != votes2) {
+            CompetitionSubmission winnerSubmission = (votes1 > votes2) ? match.getSubmission1() : match.getSubmission2();
+            match.setWinnerSubmission(winnerSubmission);
+            match.setFinishedAt(Instant.now());
+            match = competitionMatchRepository.save(match);
+            competitionDrawBuilderService.processMatchResult(match);
+        }
+        // If there's a tie when past deadline, we still don't finish and wait for the next vote to break the tie
+    }
 
+    /**
+     * Retrieves the voting queue for the given account.
+     * The queue contains matches that are not finished, sorted by match start time.
+     * It excludes matches that the account has already voted on and matches that the account is a participant in.
+     * @param account The account for which to retrieve the voting queue
+     * @return VotingQueueResponse containing a list of active match voting info
+     */
+    @Transactional(readOnly = true)
     public VotingQueueResponse getVotingQueue(Account account) {
         if (account == null) {
             throw new IllegalArgumentException("Account cannot be null");
@@ -291,5 +396,30 @@ public class CompetitionService {
                 })
                 .toList();
         return new VotingQueueResponse(votingItems);
+    }
+
+    /**
+     * Retrieves all images from the gallery of the account that meet the competition requirements.
+     *
+     * @param account      The account whose gallery entries are to be checked
+     * @param competitionId  The id of competition to check against
+     * @return ImagesCompetitionComplianceDTO containing compliant images
+     */
+    @Transactional
+    public ImagesCompetitionComplianceDTO getImagesCompetitionCompliance(Account account, Long competitionId) {
+        Competition competition = competitionRepository.findById(competitionId).orElseThrow(() -> new IllegalArgumentException("Competition not found"));
+        if (account == null || competition == null) {
+            throw new IllegalArgumentException("Account and competition cannot be null");
+        }
+        // Get all images from the gallery of the account
+        List<GalleryEntry> galleryEntries = galleryEntryRepository.findAllByHiddenAtIsNullAndImageOwnerAccountId(account.getId());
+        List<ImageCompetitionComplianceDTO> compliantImages = new ArrayList<>();
+        for (GalleryEntry entry : galleryEntries) {
+            ImageCompetitionComplianceDTO compliance = isImageCompliesWithCompetitionTheme(entry, competition);
+            if (compliance.isCompliant()) {
+                compliantImages.add(compliance);
+            }
+        }
+        return new ImagesCompetitionComplianceDTO(compliantImages);
     }
 }

@@ -6,6 +6,7 @@ public class OpenCompetitionsResponse {
     private List<OpenCompetitionItemModel> competitions;
     private List<UpcomingCompetitionItemModel> upcomingCompetitions;
 
+    public OpenCompetitionsResponse() {}
     public OpenCompetitionsResponse(List<OpenCompetitionItemModel> competitions, List<UpcomingCompetitionItemModel> upcomingCompetitions) {
         this.competitions = competitions;
         this.upcomingCompetitions = upcomingCompetitions;

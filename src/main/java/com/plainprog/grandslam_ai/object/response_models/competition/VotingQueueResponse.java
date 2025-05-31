@@ -5,6 +5,8 @@ import java.util.List;
 public class VotingQueueResponse {
     private List<ActiveMatchVotingInfo> votingQueue;
 
+    public VotingQueueResponse() {
+    }
     public VotingQueueResponse(List<ActiveMatchVotingInfo> votingQueue) {
         this.votingQueue = votingQueue;
     }

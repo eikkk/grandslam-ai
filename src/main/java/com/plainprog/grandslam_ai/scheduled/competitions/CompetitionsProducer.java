@@ -5,27 +5,40 @@ import com.plainprog.grandslam_ai.entity.competitions.Competition;
 import com.plainprog.grandslam_ai.entity.competitions.CompetitionQueue;
 import com.plainprog.grandslam_ai.entity.competitions.CompetitionTheme;
 import com.plainprog.grandslam_ai.entity.competitions.CompetitionThemeGroup;
+import com.plainprog.grandslam_ai.service.competition.CompetitionDrawBuilderService;
 import com.plainprog.grandslam_ai.service.competition.CompetitionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.*;
 @Component
-public class CompetitionsQueueTasks {
+public class CompetitionsProducer {
     private static final int DEFAULT_COMPETITION_SLOTS = 8;
-    private static final int DEFAULT_COMPETITION_VOTE_TARGET = 10;
+    private static final int DEFAULT_COMPETITION_VOTE_TARGET = 2;
 
     @Autowired
     private CompetitionService competitionService;
+    @Autowired
+    CompetitionDrawBuilderService competitionDrawBuilderService;
 
     @Scheduled(fixedRate = 30000) // Executes every 30s for now
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public synchronized void competitionsProducer() {
         System.out.println("Running competitionsProducer: " + System.currentTimeMillis());
-
+        // Get all competition with status STARTED
+        List<Competition> startedCompetitions = competitionService.getCompetitionsByStatus(Competition.CompetitionStatus.STARTED);
+        for(Competition competition : startedCompetitions) {
+            System.out.println("Competition with status STARTED found: " + competition.getId() + " - " + competition.getTheme().getName());
+            try {
+                competitionDrawBuilderService.buildCompetitionDraw(competition).get(); // Await execution
+            } catch (Exception e) {
+                System.err.println("Error while building competition draw: " + e.getMessage());
+            }
+        }
         // Check if a new competition has to be opened
         List<CompetitionThemeGroup> groupsWithOpenCompetitions = competitionService.getAllThemeGroupsByCompetitionStatus(Competition.CompetitionStatus.OPEN);
         System.out.println("Groups with open competitions: " + groupsWithOpenCompetitions.size() + " - " + groupsWithOpenCompetitions.stream().map(g -> g.getId()).toList());
@@ -45,8 +58,14 @@ public class CompetitionsQueueTasks {
         System.out.println("competitionsProducer completed at: " + System.currentTimeMillis());
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     private void handleGroupWithoutOpenCompetition(CompetitionThemeGroup group) {
+        List<Competition> openCompetitions = competitionService.getCompetitionsByStatusAndThemeGroupId(Competition.CompetitionStatus.OPEN, group.getId());
+
+        if (!openCompetitions.isEmpty()) {
+            System.out.println("Found existing OPEN competition for group: " + group.getId() + ", skipping");
+            return;
+        }
         System.out.println("Handling group without open competition: " + group.getId() + " - " + group.getName());
 
         // Get all themes of this group

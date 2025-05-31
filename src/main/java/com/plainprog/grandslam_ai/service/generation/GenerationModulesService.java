@@ -21,6 +21,10 @@ public class GenerationModulesService {
     @Autowired
     private ImgGenGroupRepository imgGenGroupRepository;
 
+    public ImgGenModule getModuleById(int moduleId) {
+        return imgGenModuleRepository.findById(moduleId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid module id: " + moduleId));
+    }
     public ImgGenModulesResponse getActiveModules(){
         Set<Integer> groupIds = new HashSet<>();
         Map<Integer, List<ImgGenModuleModel>> groupModuleMap = new HashMap<>();

@@ -23,24 +23,24 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Arrays;
 import java.util.Optional;
 
 @Component
 public class TestHelper {
-    public record TestAccount(String email, String password) {
+    public record TestAccount(Long id, String email, String password) {
     }
 
     //dev environment test accounts
     public static final TestAccount[] TEST_ACCOUNTS = {
-            new TestAccount("test1@gslm.com", "Yn(TN@ack1nW"),
-            new TestAccount("test1@gslm.com", "Yn(TN@ack1nW"),
-            new TestAccount("test2@gslm.com", ")*WVg4_1BXL3"),
-            new TestAccount("test3@gslm.com", "ljKmLCm6#mp4"),
-            new TestAccount("test4@gslm.com", "YiyYzKXoy2Mb"),
-            new TestAccount("test5@gslm.com", "*VSk1Sh18lyw"),
-            new TestAccount("test6@gslm.com", "1kSivKWgkf#l"),
-            new TestAccount("test7@gslm.com", "M1mEV8q4#!cC"),
-            new TestAccount("test8@gslm.com", "KK(LRG93COGj"),
+            new TestAccount(53L,"test1@gslm.com", "Yn(TN@ack1nW"),
+            new TestAccount(54L,"test2@gslm.com", ")*WVg4_1BXL3"),
+            new TestAccount(55L,"test3@gslm.com", "ljKmLCm6#mp4"),
+            new TestAccount(56L,"test4@gslm.com", "YiyYzKXoy2Mb"),
+            new TestAccount(57L,"test5@gslm.com", "*VSk1Sh18lyw"),
+            new TestAccount(58L,"test6@gslm.com", "1kSivKWgkf#l"),
+            new TestAccount(59L,"test7@gslm.com", "M1mEV8q4#!cC"),
+            new TestAccount(60L,"test8@gslm.com", "KK(LRG93COGj"),
     };
 
     @Value("${app.url.base}")
@@ -93,9 +93,25 @@ public class TestHelper {
             accountService.deleteAccount(account.getId());
         }
     }
-
+    public HttpHeaders initiateSession(String testEmail) {
+        TestAccount account = Arrays.stream(TEST_ACCOUNTS)
+                .filter(acc -> acc.email.equals(testEmail))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Test account not found"));
+        Account acc = accountService.getAccountByEmail(account.email);
+        if (acc == null)
+            throw new RuntimeException("Test account not found");
+        AccountWithPasswordDTO accountWithPass = new AccountWithPasswordDTO(acc, account.password);
+        return initiateSession(accountWithPass);
+    }
     public HttpHeaders initiateSession() {
         AccountWithPasswordDTO accountWithPass = ensureTestUserExists();
+        if (accountWithPass == null) {
+            throw new RuntimeException("Test user not found");
+        }
+        return initiateSession(accountWithPass);
+    }
+    public HttpHeaders initiateSession(AccountWithPasswordDTO accountWithPass) {
         if (accountWithPass == null) {
             throw new RuntimeException("Test user not found");
         }
@@ -130,5 +146,9 @@ public class TestHelper {
                 return null;
             }
         }
+    }
+
+    public Account getAccount(String email){
+        return accountService.getAccountByEmail(email);
     }
 }

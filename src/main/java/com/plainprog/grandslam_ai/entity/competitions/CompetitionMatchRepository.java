@@ -22,6 +22,11 @@ public interface CompetitionMatchRepository extends JpaRepository<CompetitionMat
     WHERE m.winnerSubmission IS NULL
       AND s1.accountId <> :excludeAccountId
       AND s2.accountId <> :excludeAccountId
+      AND NOT EXISTS (
+        SELECT v FROM MatchVote v 
+        WHERE v.match = m 
+        AND v.account.id = :excludeAccountId
+      )
     ORDER BY m.startedAt ASC
     """)
     List<CompetitionMatch> findUnfinishedMatchesExcludingAccount(

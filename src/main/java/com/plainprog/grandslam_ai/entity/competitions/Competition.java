@@ -29,9 +29,12 @@ public class Competition extends BaseEntity<Long> {
     @Column(name = "vote_target")
     private Integer voteTarget;
 
-    // Enum for competition status
+    //OPEN - competition is open for submissions
+    //STARTED - competition has started, but no matches yet
+    //RUNNING - competition is running, matches are ongoing
+    //FINISHED - competition is finished, no more matches
     public enum CompetitionStatus {
-        OPEN, STARTED, FINISHED
+        OPEN, STARTED, RUNNING, FINISHED
     }
 
     // Constructors

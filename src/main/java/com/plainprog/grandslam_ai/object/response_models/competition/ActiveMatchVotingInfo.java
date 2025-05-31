@@ -9,6 +9,9 @@ public class ActiveMatchVotingInfo {
     private ImageDTO image1;
     private ImageDTO image2;
 
+    public ActiveMatchVotingInfo() {
+    }
+
     public ActiveMatchVotingInfo(Long matchId, Long submissionId1, Long submissionId2, ImageDTO image1, ImageDTO image2) {
         this.matchId = matchId;
         this.submissionId1 = submissionId1;

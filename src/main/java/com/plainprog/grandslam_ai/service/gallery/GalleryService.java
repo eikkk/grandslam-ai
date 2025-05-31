@@ -38,6 +38,12 @@ public class GalleryService {
     private ImageRepository imageRepository;
 
 
+
+    public GalleryEntry getGalleryEntryByImageId(Long imageId) {
+        return galleryEntryRepository.findByImageId(imageId)
+                .orElseThrow(() -> new IllegalArgumentException("Gallery entry not found for image ID: " + imageId));
+    }
+
     @Transactional
     public void promoteIncubatorImages(List<Long> imageIds, Account account) {
         //iterate through imageIds and handle each delete

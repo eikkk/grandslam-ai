@@ -34,7 +34,7 @@ public class CompetitionController {
             if (result.getOperationOutcome() == OperationOutcome.SUCCESS) {
                 return ResponseEntity.ok(result);
             } else {
-                return ResponseEntity.badRequest().body(result);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
             }
         } catch (Exception e) {
             OperationResultDTO operationResultDTO = new OperationResultDTO(

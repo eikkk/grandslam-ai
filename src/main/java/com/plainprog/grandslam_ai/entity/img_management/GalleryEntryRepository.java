@@ -17,6 +17,7 @@ public interface GalleryEntryRepository extends JpaRepository<GalleryEntry, Long
     List<GalleryEntry> findAllByIdInAndImageOwnerAccountId(List<Long> ids, Long ownerAccountId);
     List<GalleryEntry> findAllByGroupIsNullAndHiddenAtIsNullAndImageOwnerAccountId(Long ownerAccountId);
     List<GalleryEntry> findAllByHiddenAtIsNotNullAndImageOwnerAccountId(Long ownerAccountId);
+    List<GalleryEntry> findAllByHiddenAtIsNullAndImageOwnerAccountId(Long ownerAccountId);
     List<GalleryEntry> findAllByImageIdInAndImageOwnerAccountId(List<Long> imageIds, Long ownerAccountId);
 
 }
