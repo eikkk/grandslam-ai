@@ -1,5 +1,7 @@
 package com.plainprog.grandslam_ai.entity;
 
+import org.hibernate.Hibernate;
+
 import java.io.Serializable;
 
 public abstract class BaseEntity<ID_TYPE> implements Identifiable<ID_TYPE>, Serializable {
@@ -7,7 +9,12 @@ public abstract class BaseEntity<ID_TYPE> implements Identifiable<ID_TYPE>, Seri
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (this.getClass() != o.getClass()) return false;
+
+        // Get the real, unproxied class
+        Class<?> thisClass = Hibernate.getClass(this);
+        Class<?> otherClass = Hibernate.getClass(o);
+
+        if (thisClass != otherClass) return false;
 
         Identifiable<ID_TYPE> entity2 = (Identifiable<ID_TYPE>) o;
         ID_TYPE id1 = this.getId();

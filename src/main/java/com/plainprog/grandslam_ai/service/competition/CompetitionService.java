@@ -309,12 +309,13 @@ public class CompetitionService {
     /**
      * Helper method to find the vote count for a specific submission from a list of vote counts
      */
-    private long findVoteCount(List<SubmissionVoteCountDTO> voteCounts, Long submissionId) {
-        return voteCounts.stream()
+    private int findVoteCount(List<SubmissionVoteCountDTO> voteCounts, Long submissionId) {
+        long count = voteCounts.stream()
                 .filter(vc -> vc.getSubmissionId().equals(submissionId))
                 .map(SubmissionVoteCountDTO::getVoteCount)
                 .findFirst()
                 .orElse(0L);
+        return (int)count;
     }
     
     /**
@@ -334,10 +335,10 @@ public class CompetitionService {
         Long sub2Id = match.getSubmission2().getId();
         
         // Find vote counts for each submission
-        long votes1 = findVoteCount(voteCounts, sub1Id);
-        long votes2 = findVoteCount(voteCounts, sub2Id);
+        int votes1 = findVoteCount(voteCounts, sub1Id);
+        int votes2 = findVoteCount(voteCounts, sub2Id);
         
-        // Only proceed if there's a vote target requirement and it's been met, or if we're not checking vote target
+        // Only proceed if there's a vote target requirement, and it's been met, or if we're not checking vote target
         if (!checkVoteTarget || votes1 >= match.getVoteTarget() || votes2 >= match.getVoteTarget()) {
             // Only finish if there's a clear winner (no tie)
             if (votes1 != votes2) {
@@ -345,7 +346,7 @@ public class CompetitionService {
                 match.setWinnerSubmission(winnerSubmission);
                 match.setFinishedAt(Instant.now());
                 match = competitionMatchRepository.save(match);
-                competitionDrawBuilderService.processMatchResult(match);
+                competitionDrawBuilderService.processMatchResult(match, votes1, votes2);
                 return true;
             }
         }

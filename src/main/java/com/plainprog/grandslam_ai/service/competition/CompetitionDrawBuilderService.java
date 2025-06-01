@@ -1,6 +1,8 @@
 package com.plainprog.grandslam_ai.service.competition;
 
 import com.plainprog.grandslam_ai.entity.competitions.*;
+import com.plainprog.grandslam_ai.entity.img_gen.Image;
+import com.plainprog.grandslam_ai.helper.competition.EloCalculator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,8 @@ public class CompetitionDrawBuilderService {
     private CompetitionMatchRepository competitionMatchRepository;
     @Autowired
     private CompetitionSubmissionRepository competitionSubmissionRepository;
+    @Autowired
+    private MatchRecordService matchRecordService;
 
     @Async
     @Transactional(isolation = Isolation.SERIALIZABLE)
@@ -100,31 +104,67 @@ public class CompetitionDrawBuilderService {
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
-    public void processMatchResult(CompetitionMatch match) {
-        if (match.getNextMatch() != null) {
-            // Get the winner submission
-            CompetitionSubmission winnerSubmission = match.getWinnerSubmission();
-            if (winnerSubmission != null) {
-                // We have to determine if in the next stage winner is submission1 or submission2
-                // it will be submission1 if the matchIndex is even, otherwise submission2
-                int matchIndex = match.getMatchIndex();
-                boolean isEvenMatchIndex = matchIndex % 2 == 0;
-                CompetitionMatch nextMatch = competitionMatchRepository.findByIdWithLock(match.getNextMatch().getId());
-                if (isEvenMatchIndex) {
-                    nextMatch.setSubmission1(winnerSubmission);
-                } else {
-                    nextMatch.setSubmission2(winnerSubmission);
-                }
-                // if both competitors are in the match, set started at
-                if (nextMatch.getSubmission1() != null && nextMatch.getSubmission2() != null) {
-                    nextMatch.setStartedAt(Instant.now());
-                    // determine vote deadline
-                    Instant voteDeadline = Instant.now().plusSeconds(VOTE_DEADLINE_HOURS * 3600);
-                    nextMatch.setVoteDeadline(voteDeadline);
-                }
-                // Save the next match
-                competitionMatchRepository.save(nextMatch);
-            }
+    public void processMatchResult(CompetitionMatch match, int votes1, int votes2) {
+        // Get the winner submission
+        CompetitionSubmission winnerSubmission = match.getWinnerSubmission();
+        if (winnerSubmission == null || winnerSubmission.getId() == null) {
+            // No winner submission, cannot process match result
+            throw new RuntimeException("Match result cannot be processed: no winner submission");
         }
+        // Process the match result for the tournament bracket
+        if (match.getNextMatch() != null) {
+            // We have to determine if in the next stage winner is submission1 or submission2
+            // it will be submission1 if the matchIndex is even, otherwise submission2
+            int matchIndex = match.getMatchIndex();
+            boolean isEvenMatchIndex = matchIndex % 2 == 0;
+            CompetitionMatch nextMatch = competitionMatchRepository.findByIdWithLock(match.getNextMatch().getId());
+            if (isEvenMatchIndex) {
+                nextMatch.setSubmission1(winnerSubmission);
+            } else {
+                nextMatch.setSubmission2(winnerSubmission);
+            }
+            // if both competitors are in the match, set started at
+            if (nextMatch.getSubmission1() != null && nextMatch.getSubmission2() != null) {
+                nextMatch.setStartedAt(Instant.now());
+                // determine vote deadline
+                Instant voteDeadline = Instant.now().plusSeconds(VOTE_DEADLINE_HOURS * 3600);
+                nextMatch.setVoteDeadline(voteDeadline);
+            }
+            // Save the next match
+            competitionMatchRepository.save(nextMatch);
+        }
+
+        // Calculate ELO ratings and save match records
+        Image image1 = match.getSubmission1().getImage();
+        Image image2 = match.getSubmission2().getImage();
+
+        // Store original ELO values
+        int image1StartingElo = image1.getElo() != null ? image1.getElo() : 1000;
+        int image2StartingElo = image2.getElo() != null ? image2.getElo() : 1000;
+
+        // Determine the winner
+        boolean image1Won = match.getWinnerSubmission().getId().equals(match.getSubmission1().getId());
+
+        // Calculate new ELO ratings
+        int[] newRatings = EloCalculator.calculateNewRatings(image1StartingElo, image2StartingElo, image1Won);
+        int image1EndingElo = newRatings[0];
+        int image2EndingElo = newRatings[1];
+
+        // Update image ELO ratings
+        image1.setElo(image1EndingElo);
+        image2.setElo(image2EndingElo);
+
+        // Save match records from both images' perspectives
+        matchRecordService.createMatchRecordsForBothImages(
+                match,
+                image1,
+                image2,
+                votes1,
+                votes2,
+                image1StartingElo,
+                image1EndingElo,
+                image2StartingElo,
+                image2EndingElo
+        );
     }
 }
