@@ -27,6 +27,8 @@ public class CompetitionDrawBuilderService {
     private CompetitionSubmissionRepository competitionSubmissionRepository;
     @Autowired
     private MatchRecordService matchRecordService;
+    @Autowired
+    private CompetitionRepository competitionRepository;
 
     @Async
     @Transactional(isolation = Isolation.SERIALIZABLE)
@@ -105,15 +107,23 @@ public class CompetitionDrawBuilderService {
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
-    public void processMatchResult(CompetitionMatch match, int votes1, int votes2) {
+    public void processMatchResult(Competition competition, CompetitionMatch match, int votes1, int votes2) {
         // Get the winner submission
         CompetitionSubmission winnerSubmission = match.getWinnerSubmission();
         if (winnerSubmission == null || winnerSubmission.getId() == null) {
             // No winner submission, cannot process match result
             throw new RuntimeException("Match result cannot be processed: no winner submission");
         }
+
+        boolean isFinalMatch = match.getNextMatch() == null;
+
         // Process the match result for the tournament bracket
-        if (match.getNextMatch() != null) {
+        if (isFinalMatch){
+            // This is the final match, set the competition winner and update status
+            competition.setWinnerImage(winnerSubmission.getImage());
+            competition.setStatus(Competition.CompetitionStatus.FINISHED);
+            competitionRepository.save(competition);
+        } else {
             // We have to determine if in the next stage winner is submission1 or submission2
             // it will be submission1 if the matchIndex is even, otherwise submission2
             int matchIndex = match.getMatchIndex();

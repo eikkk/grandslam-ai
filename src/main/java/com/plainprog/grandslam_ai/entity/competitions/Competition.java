@@ -1,6 +1,7 @@
 package com.plainprog.grandslam_ai.entity.competitions;
 
 import com.plainprog.grandslam_ai.entity.BaseEntity;
+import com.plainprog.grandslam_ai.entity.img_gen.Image;
 import jakarta.persistence.*;
 import java.time.Instant;
 
@@ -28,6 +29,10 @@ public class Competition extends BaseEntity<Long> {
 
     @Column(name = "vote_target")
     private Integer voteTarget;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "winner_image_id")
+    private Image winnerImage;
 
     //OPEN - competition is open for submissions
     //STARTED - competition has started, but no matches yet
@@ -95,6 +100,14 @@ public class Competition extends BaseEntity<Long> {
 
     public void setVoteTarget(Integer voteTarget) {
         this.voteTarget = voteTarget;
+    }
+
+    public Image getWinnerImage() {
+        return winnerImage;
+    }
+
+    public void setWinnerImage(Image winnerImage) {
+        this.winnerImage = winnerImage;
     }
 
     @PrePersist

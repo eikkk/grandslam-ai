@@ -302,7 +302,7 @@ public class CompetitionService {
 
         // Check if we should finish the match based on deadline
         boolean isPastDeadline = match.getVoteDeadline().compareTo(Instant.now()) < 0;
-        checkMatchVotesAndFinishIfClear(match, !isPastDeadline);
+        checkMatchVotesAndFinishIfClear(match.getCompetition(), match, !isPastDeadline);
 
         return new OperationResultDTO(OperationOutcome.SUCCESS, "Vote submitted successfully", null);
     }
@@ -326,7 +326,7 @@ public class CompetitionService {
      * @return true if the match was finished, false otherwise
      */
     @Transactional(isolation = Isolation.SERIALIZABLE)
-    public boolean checkMatchVotesAndFinishIfClear(CompetitionMatch match, boolean checkVoteTarget) {
+    public boolean checkMatchVotesAndFinishIfClear(Competition competition, CompetitionMatch match, boolean checkVoteTarget) {
         // Get vote counts for both submissions in a single query
         List<SubmissionVoteCountDTO> voteCounts = matchVoteRepository.countVotesBySubmissionForMatchWithLock(match.getId());
         
@@ -346,7 +346,7 @@ public class CompetitionService {
                 match.setWinnerSubmission(winnerSubmission);
                 match.setFinishedAt(Instant.now());
                 match = competitionMatchRepository.save(match);
-                competitionDrawBuilderService.processMatchResult(match, votes1, votes2);
+                competitionDrawBuilderService.processMatchResult(competition, match, votes1, votes2);
                 return true;
             }
         }

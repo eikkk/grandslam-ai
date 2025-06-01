@@ -30,7 +30,7 @@ public class MatchDeadlineProcessor {
         if (!deadlineMatches.isEmpty()) {
             System.out.println("Found " + deadlineMatches.size() + " matches with expired voting deadlines");
             for (CompetitionMatch match : deadlineMatches) {
-                competitionService.checkMatchVotesAndFinishIfClear(match, false);
+                competitionService.checkMatchVotesAndFinishIfClear(match.getCompetition(), match, false);
             }
         }
     }
