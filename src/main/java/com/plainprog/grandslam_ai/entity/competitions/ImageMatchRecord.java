@@ -28,6 +28,12 @@ public class ImageMatchRecord {
     @Column(name = "opponent_image_id", nullable = false)
     private Long opponentImageId;
 
+    @Column(name = "round", nullable = false)
+    private int round;
+
+    @Column(name = "round_inverse", nullable = false)
+    private int roundInverse;
+
     @Column(name = "starting_elo", nullable = false)
     private int startingElo;
 
@@ -45,11 +51,15 @@ public class ImageMatchRecord {
 
     public ImageMatchRecord() {}
 
-    public ImageMatchRecord(CompetitionMatch match, Image image, Account ownerAccount, Long opponentImageId, int startingElo, int endingElo, Integer votesCount, Integer opponentVotesCount) {
+    public ImageMatchRecord(CompetitionMatch match, Image image, Account ownerAccount, Long opponentImageId, 
+                            int round, int roundInverse, int startingElo, int endingElo, 
+                            Integer votesCount, Integer opponentVotesCount) {
         this.match = match;
         this.image = image;
         this.ownerAccount = ownerAccount;
         this.opponentImageId = opponentImageId;
+        this.round = round;
+        this.roundInverse = roundInverse;
         this.startingElo = startingElo;
         this.endingElo = endingElo;
         this.votesCount = votesCount;
@@ -96,6 +106,22 @@ public class ImageMatchRecord {
 
     public void setOpponentImageId(Long opponentImageId) {
         this.opponentImageId = opponentImageId;
+    }
+
+    public int getRound() {
+        return round;
+    }
+
+    public void setRound(int round) {
+        this.round = round;
+    }
+
+    public int getRoundInverse() {
+        return roundInverse;
+    }
+
+    public void setRoundInverse(int roundInverse) {
+        this.roundInverse = roundInverse;
     }
 
     public int getStartingElo() {

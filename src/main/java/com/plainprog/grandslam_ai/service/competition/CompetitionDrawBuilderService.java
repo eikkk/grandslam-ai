@@ -60,6 +60,7 @@ public class CompetitionDrawBuilderService {
 
         //start with a final and move backwards
         for (int round = numberOfRounds; round > 0; round--) {
+            int roundInverse = numberOfRounds - round + 1; // Calculate round_inverse
             int matchesInRound = (int) Math.pow(2, numberOfRounds - round);
             for (int matchIndex = 0; matchIndex < matchesInRound; matchIndex++) {
                 // Gen next match in the draw from competitionMap
@@ -78,7 +79,7 @@ public class CompetitionDrawBuilderService {
                     }
                 }
                 // Create a match
-                CompetitionMatch match = new CompetitionMatch(competition, round, matchIndex, competition.getVoteTarget(), nextMatch);
+                CompetitionMatch match = new CompetitionMatch(competition, round, roundInverse, matchIndex, competition.getVoteTarget(), nextMatch);
                 // if it's first round, we need to set distribute the competitors
                 if (round == 1){
                     // Get the two submissions for this match

@@ -21,6 +21,9 @@ public class CompetitionMatch extends BaseEntity<Long> {
     @Column(name = "round", nullable = false)
     private int round;
 
+    @Column(name = "round_inverse", nullable = false)
+    private int roundInverse;
+
     @Column(name = "match_index", nullable = false)
     private int matchIndex;
 
@@ -61,9 +64,10 @@ public class CompetitionMatch extends BaseEntity<Long> {
     public CompetitionMatch() {
     }
 
-    public CompetitionMatch(Competition competition, int round, int matchIndex, int voteTarget, CompetitionMatch nextMatch) {
+    public CompetitionMatch(Competition competition, int round, int roundInverse, int matchIndex, int voteTarget, CompetitionMatch nextMatch) {
         this.competition = competition;
         this.round = round;
+        this.roundInverse = roundInverse;
         this.matchIndex = matchIndex;
         this.voteTarget = voteTarget;
         this.nextMatch = nextMatch;
@@ -92,6 +96,14 @@ public class CompetitionMatch extends BaseEntity<Long> {
 
     public void setRound(int round) {
         this.round = round;
+    }
+
+    public int getRoundInverse() {
+        return roundInverse;
+    }
+
+    public void setRoundInverse(int roundInverse) {
+        this.roundInverse = roundInverse;
     }
 
     public int getMatchIndex() {
