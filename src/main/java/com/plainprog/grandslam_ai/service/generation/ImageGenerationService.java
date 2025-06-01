@@ -6,6 +6,7 @@ import com.plainprog.grandslam_ai.entity.img_management.IncubatorEntry;
 import com.plainprog.grandslam_ai.entity.img_management.IncubatorEntryRepository;
 import com.plainprog.grandslam_ai.helper.generation.GetImgAI;
 import com.plainprog.grandslam_ai.helper.generation.Prompts;
+import com.plainprog.grandslam_ai.helper.generation.TestImageGenerator;
 import com.plainprog.grandslam_ai.helper.image.ImageCompressor;
 import com.plainprog.grandslam_ai.object.constant.images.ImgGenModuleId;
 import com.plainprog.grandslam_ai.object.constant.images.ProviderId;
@@ -51,7 +52,7 @@ public class ImageGenerationService {
             throw new IllegalArgumentException(OWNERSHIP_ERROR);
         }
         ImgGenRequest request = new ImgGenRequest(prompt, image.getNegativePrompt(), image.getOrientation(), image.getImgGenProvider().getId(), image.getImgGenModule().getId(), image.getImgGenProvider().getId(), image.getSteps());
-        return generateImage(request, account, true, image.getSeed(), image.getImgGenProvider().getId());
+        return generateImage(request, account, true, image.getSeed(), image.getImgGenProvider().getId(), false);
     }
 
     public ImgGenResponse regenerateImage(long imageId, Account account) throws Exception {
@@ -61,10 +62,15 @@ public class ImageGenerationService {
             throw new IllegalArgumentException(OWNERSHIP_ERROR);
         }
         ImgGenRequest request = new ImgGenRequest(image.getPrompt(), image.getNegativePrompt(), image.getOrientation(), image.getImgGenProvider().getId(), image.getImgGenModule().getId(), image.getImgGenProvider().getId(), image.getSteps());
-        return generateImage(request, account, true, 0, image.getImgGenProvider().getId());
+        return generateImage(request, account, true, 0, image.getImgGenProvider().getId(), false);
     }
 
-    public ImgGenResponse generateImage(ImgGenRequest request, Account account, boolean regeneration, int seed, int providerId) throws Exception {
+    public ImgGenResponse generateImage(ImgGenRequest request,
+                                        Account account,
+                                        boolean regeneration,
+                                        int seed,
+                                        int providerId,
+                                        boolean testMode) throws Exception {
         //if providerId not specified we have to derive it from moduleId
         if (providerId == 0){
             ImgGenModule module = imgGenModuleRepository.findById(request.getModuleId()).orElseThrow(() -> new IllegalArgumentException("Invalid module id"));
@@ -97,24 +103,39 @@ public class ImageGenerationService {
 
         int steps = request.getSteps() == null || request.getSteps() <= 0 ? 25 : request.getSteps();
 
-        if (ProviderId.SDXL_Providers().contains(providerId)){
-            String modelName = ProviderId.toModelName(providerId);
-            GetImgAI_StableDiffusionRequest r = new GetImgAI_StableDiffusionRequest(modelName, positivePromptFinal, negativePromptFinal, "url","jpeg",  steps, width, height);
-            if (seed != 0){
-                r.setSeed(seed);
-            }
-            generationResult = GetImgAI.imageGeneration(r);
+        if (testMode){
+            TestImageGenerator testImageGenerator = new TestImageGenerator();
+            generationResult = testImageGenerator.generateTestImage(width, height);
         } else {
-            throw new IllegalArgumentException("Invalid module id");
+            if (ProviderId.SDXL_Providers().contains(providerId)){
+                String modelName = ProviderId.toModelName(providerId);
+                GetImgAI_StableDiffusionRequest r = new GetImgAI_StableDiffusionRequest(modelName, positivePromptFinal, negativePromptFinal, "url","jpeg",  steps, width, height);
+                if (seed != 0){
+                    r.setSeed(seed);
+                }
+                generationResult = GetImgAI.imageGeneration(r);
+            } else {
+                throw new IllegalArgumentException("Invalid module id");
+            }
         }
+
         //upload image to GCP and save to db
         String imageURL_String = generationResult.getUrl();
-        URL imageURL = new URL(imageURL_String);
+        InputStream is;
+        if (testMode && imageURL_String.startsWith("data:image/")) {
+            // Handle base64 data URL
+            String base64Data = imageURL_String.split(",")[1];
+            byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Data);
+            is = new java.io.ByteArrayInputStream(imageBytes);
+        } else {
+            // Handle regular URL
+            URL imageURL = new URL(imageURL_String);
+            is = imageURL.openStream();
+        }
         Size sizeQCompress = new Size((int)(width * Q_COMPRESSION), (int)(height * Q_COMPRESSION));
         Size sizeThumbnail = new Size((int)(width * T_COMPRESSION), (int)(height * T_COMPRESSION));
         ImageDTO image;
-        try {
-            InputStream is = imageURL.openStream();
+        try {;
             image = upload(is, GCPStorageService.UPLOAD_GENERATION_IMAGES_FOLDER + account.getId() + "/", sizeQCompress, sizeThumbnail);
         } catch (IOException e) {
             e.printStackTrace();

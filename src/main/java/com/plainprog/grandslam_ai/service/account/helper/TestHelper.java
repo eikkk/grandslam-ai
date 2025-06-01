@@ -139,7 +139,7 @@ public class TestHelper {
             ImgGenRequest request = new ImgGenRequest(Prompts.testPrompt, "s", ProviderId.STABLE_DIFFUSION_XL, ImgGenModuleId.RAW_STABLE_DIFFUSION_XL);
             request.setNegativePrompt("Cartoon, low resolution");
             try {
-                ImgGenResponse response = imageGenerationService.generateImage(request, account, false, 0, 0);
+                ImgGenResponse response = imageGenerationService.generateImage(request, account, false, 0, 0, true);
                 var id = response.getImageId();
                 return imageRepository.findById(id).orElse(null);
             } catch (Exception e) {

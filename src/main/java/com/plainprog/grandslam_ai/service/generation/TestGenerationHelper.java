@@ -41,6 +41,6 @@ public class TestGenerationHelper {
             throw new RuntimeException("No test module found");
         }
         ImgGenRequest imgGenRequest = new ImgGenRequest(Prompts.testPrompt, "s", module.getProvider().getId(), module.getId());
-        return imageGenerationService.generateImage(imgGenRequest, account, false, 0, module.getProvider().getId());
+        return imageGenerationService.generateImage(imgGenRequest, account, false, 0, module.getProvider().getId(), true);
     }
 }

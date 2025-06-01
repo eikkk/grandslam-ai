@@ -33,7 +33,7 @@ public class GeneratedImagesController {
     public ResponseEntity<ImgGenResponse> generateImage(@RequestBody ImgGenRequest request) {
         Account account = SessionDataHolder.getPayload().getAccount();
         try {
-            ImgGenResponse result = imageGenerationService.generateImage(request, account, false, 0, 0);
+            ImgGenResponse result = imageGenerationService.generateImage(request, account, false, 0, 0, false);
             OperationResultDTO operationResultDTO = new OperationResultDTO(OperationOutcome.SUCCESS, "Image generated successfully", null);
             result.setOperationResult(operationResultDTO);
             return ResponseEntity.ok(result);
