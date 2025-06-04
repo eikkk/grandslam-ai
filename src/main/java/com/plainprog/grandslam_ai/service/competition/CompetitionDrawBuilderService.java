@@ -107,10 +107,14 @@ public class CompetitionDrawBuilderService {
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
-    public void processMatchResult(Competition competition, CompetitionMatch match, int votes1, int votes2) {
+    public void processMatchResult(Competition c, CompetitionMatch m, int votes1, int votes2) {
+        // reload the match to avoid detached entity issues
+        var match = competitionMatchRepository.findByIdWithLock(m.getId());
+        var competition = competitionRepository.findByIdWithLock(c.getId());
         // Get the winner submission
         CompetitionSubmission winnerSubmission = match.getWinnerSubmission();
-        if (winnerSubmission == null || winnerSubmission.getId() == null) {
+        Image winnerImage = winnerSubmission.getImage();
+        if (winnerSubmission.getId() == null || winnerImage == null) {
             // No winner submission, cannot process match result
             throw new RuntimeException("Match result cannot be processed: no winner submission");
         }
@@ -120,7 +124,7 @@ public class CompetitionDrawBuilderService {
         // Process the match result for the tournament bracket
         if (isFinalMatch){
             // This is the final match, set the competition winner and update status
-            competition.setWinnerImage(winnerSubmission.getImage());
+            competition.setWinnerImage(winnerImage);
             competition.setStatus(Competition.CompetitionStatus.FINISHED);
             competitionRepository.save(competition);
         } else {
@@ -154,7 +158,7 @@ public class CompetitionDrawBuilderService {
         int image2StartingElo = image2.getElo() != null ? image2.getElo() : 1000;
 
         // Determine the winner
-        boolean image1Won = match.getWinnerSubmission().getId().equals(match.getSubmission1().getId());
+        boolean image1Won = winnerSubmission.getId().equals(match.getSubmission1().getId());
 
         // Calculate new ELO ratings
         int[] newRatings = EloCalculator.calculateNewRatings(image1StartingElo, image2StartingElo, image1Won);
