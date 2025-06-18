@@ -39,6 +39,10 @@ public class AuthenticationController {
             OperationResultDTO r = new OperationResultDTO(OperationOutcome.FAILURE, "Failed to create account", null);
             return new ResponseEntity<>(r, HttpStatus.INTERNAL_SERVER_ERROR);
         }
+        if (accountResult.isAlreadyExists()) {
+            OperationResultDTO r = new OperationResultDTO(OperationOutcome.ALREADY_EXIST, "", "ALREADY_EXISTS");
+            return new ResponseEntity<>(r, HttpStatus.OK);
+        }
         if (accountResult.getErrorMessage() != null) {
             OperationResultDTO r = new OperationResultDTO(OperationOutcome.FAILURE, "Failed to create account", accountResult.getErrorMessage());
             return new ResponseEntity<>(r, HttpStatus.BAD_REQUEST);

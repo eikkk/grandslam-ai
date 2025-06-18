@@ -45,7 +45,7 @@ public class AccountService {
     public AccountCreationDTO createAccount(String email) {
         Account existingAccount = accountRepository.findByEmail(email);
         if (existingAccount != null ) {
-            return new AccountCreationDTO(null, null, null, "Account with this email already exists");
+            return new AccountCreationDTO(existingAccount, null, null, "", true);
         }
 
         String pass = PassGenHelp.randomPassword();
@@ -57,7 +57,7 @@ public class AccountService {
         AccountSecurity accSec = new AccountSecurity(account.getId(), hashPass, null, null);
         accountSecurityRepository.save(accSec);
 
-        return new AccountCreationDTO(account, accSec, pass, null);
+        return new AccountCreationDTO(account, accSec, pass, null, false);
     }
     /**
      * To be used from the verification web page.

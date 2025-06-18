@@ -4,4 +4,5 @@ public class OperationOutcome {
     public static final int SUCCESS = 1;
     public static final int PARTIAL_SUCCESS = 2;
     public static final int FAILURE = 3;
+    public static final int ALREADY_EXIST = 4;
 }

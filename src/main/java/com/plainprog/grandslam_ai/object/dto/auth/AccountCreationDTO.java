@@ -8,12 +8,14 @@ public class AccountCreationDTO {
     private AccountSecurity accountSecurity;
     private String password;
     private String errorMessage;
+    private boolean alreadyExists;
 
-    public AccountCreationDTO(Account account, AccountSecurity accountSecurity, String password, String errorMessage) {
+    public AccountCreationDTO(Account account, AccountSecurity accountSecurity, String password, String errorMessage, boolean alreadyExists) {
         this.account = account;
         this.accountSecurity = accountSecurity;
         this.password = password;
         this.errorMessage = errorMessage;
+        this.alreadyExists = alreadyExists;
     }
 
     public Account getAccount() {
@@ -46,5 +48,13 @@ public class AccountCreationDTO {
 
     public void setErrorMessage(String errorMessage) {
         this.errorMessage = errorMessage;
+    }
+
+    public boolean isAlreadyExists() {
+        return alreadyExists;
+    }
+
+    public void setAlreadyExists(boolean alreadyExists) {
+        this.alreadyExists = alreadyExists;
     }
 }
