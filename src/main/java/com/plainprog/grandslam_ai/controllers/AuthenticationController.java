@@ -1,11 +1,13 @@
 package com.plainprog.grandslam_ai.controllers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.plainprog.grandslam_ai.entity.account.Account;
 import com.plainprog.grandslam_ai.object.dto.auth.AccountCreationDTO;
 import com.plainprog.grandslam_ai.object.dto.util.OperationOutcome;
 import com.plainprog.grandslam_ai.object.dto.util.OperationResultDTO;
 import com.plainprog.grandslam_ai.object.dto.util.SimpleOperationResultDTO;
 import com.plainprog.grandslam_ai.object.request_models.auth.CreateAccountRequest;
+import com.plainprog.grandslam_ai.object.response_models.auth.EmailCheckResponse;
 import com.plainprog.grandslam_ai.service.account.AccountService;
 import com.plainprog.grandslam_ai.service.auth.AuthService;
 import com.plainprog.grandslam_ai.service.auth.helper.SessionDataHolder;
@@ -25,6 +27,22 @@ public class AuthenticationController {
     @Autowired
     private AuthService authService;
 
+
+    /**
+     * Checks if an email already exists in the system.
+     *
+     * @param email the email to check
+     * @return response with information about whether the email exists
+     */
+    @GetMapping("/check-email")
+    public ResponseEntity<EmailCheckResponse> checkEmailExists(@RequestParam String email) {
+        Account account = accountService.getAccountByEmail(email);
+        boolean exists = account != null;
+
+        EmailCheckResponse response = new EmailCheckResponse(exists, "");
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
     /**
      * Creates an account with the given email. Generated random password.
      * Sends an email with registration confirmation link and password.
